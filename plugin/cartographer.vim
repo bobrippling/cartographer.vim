@@ -3,19 +3,32 @@
 finish
 
 " inspired by plug.vim, plug#end()
-"
-" see problems in CartographerDispatch for hooking into :command
-" may still be able to do mappings
+
 
 let s:cmds = {}
+let s:log = {}
+
+function! s:show_log()
+	for k in keys(s:log)
+		let dupe = copy(s:log[k])
+		call map(dupe, { _, v -> v.when })
+		call sort(dupe)
+
+		let earliest = strftime("%Y-%m-%d %H:%M", dupe[0])
+		let latest = strftime("%Y-%m-%d %H:%M", dupe[len(dupe) - 1])
+
+		echo k .. ":" len(s:log[k]) "uses, earliest at" earliest .. ", latest at" latest
+	endfor
+endfunction
+
+command! CartographerLog call s:show_log()
 
 function! s:install()
-	"call s:install_cmds()
-	"call s:hook_cmd("Ttydisplay")
+	call s:hook_cmd("Ttysplit")
 
 	" TODO
-	"call s:install_maps()
-	call s:hook_map()
+	"call s:install_cmds()
+	"call s:install_maps() / s:hook_map(...)
 endfunction
 
 function! s:hook_cmd(cmd)
@@ -28,12 +41,12 @@ function! s:hook_cmd(cmd)
 	let s:cmds[cmd.name] = cmd
 
 	execute "command!"
-				\ s:cmd_flags_expand(cmd.flags)
-				\ s:cmd_args_expand(cmd.args)
-				\ s:cmd_range_expand(cmd.range)
-				\ s:cmd_addrtype_expand(cmd.addrtype)
-				\ cmd.name
-				\ "call CartographerDispatch('" . cmd.name . "')"
+	\   s:cmd_flags_expand(cmd.flags)
+	\   s:cmd_args_expand(cmd.args)
+	\   s:cmd_range_expand(cmd.range)
+	\   s:cmd_addrtype_expand(cmd.addrtype)
+	\   cmd.name
+	\   "call CartographerLogCmd('" . cmd.name . "') | " cmd.vim_cmd
 endfunction
 
 function! s:parse_command(s)
@@ -124,15 +137,18 @@ function! s:cmd_addrtype_expand(s)
 	return "-addr=" . a:s
 endfunction
 
-function! CartographerDispatch(name)
+function! CartographerLogCmd(name)
 	let cmd = s:cmds[a:name]
 
-	" Problems:
-	" replacing `command Xyz call s:xyz()` // can't call into s:...
-	" replacing `<q-mods>` // doesn't seem to be replaced at this point
-
-	echo "executing:" cmd.vim_cmd
-	execute cmd.vim_cmd
+	if !has_key(s:log, a:name)
+		let s:log[a:name] = []
+	endif
+	call add(
+	\  s:log[a:name],
+	\  {
+	\    'when': localtime(),
+	\  }
+	\ )
 endfunction
 
 call s:install()
