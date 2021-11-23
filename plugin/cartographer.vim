@@ -8,6 +8,8 @@ finish
 let s:cmds = {}
 let s:log = {}
 
+let s:script_fns = []
+
 function! s:show_log()
 	for k in keys(s:log)
 		let dupe = copy(s:log[k])
@@ -40,13 +42,59 @@ function! s:hook_cmd(cmd)
 
 	let s:cmds[cmd.name] = cmd
 
+	let munged_cmd = cmd.vim_cmd
+	if cmd.vim_cmd =~ '\<s:'
+		" Need to handle cmd.vim_cmd containing <SID>... - currently resolves to this script, need to resolve to the other
+		if empty(s:script_fns)
+			call s:populate_fns()
+		endif
+
+		let munged_cmd = substitute(
+		\   munged_cmd,
+		\   '\<s:\k\+',
+		\   function('s:lookup_cmd'),
+		\   'g')
+	endif
+
 	execute "command!"
 	\   s:cmd_flags_expand(cmd.flags)
 	\   s:cmd_args_expand(cmd.args)
 	\   s:cmd_range_expand(cmd.range)
 	\   s:cmd_addrtype_expand(cmd.addrtype)
 	\   cmd.name
-	\   "call CartographerLogCmd('" . cmd.name . "') | " cmd.vim_cmd
+	\   "call CartographerLogCmd('" . cmd.name . "') | " munged_cmd
+endfunction
+
+function! s:lookup_cmd(matchlist)
+	" called with matchlist = 's:funcname'
+
+	let needle = a:matchlist[0][2:]
+	for ent in s:script_fns
+		if stridx(ent, needle) != -1
+			return "<SNR>" .. ent
+		endif
+	endfor
+
+	echoerr "couldn't find SNR command for " .. needle
+	return ''
+endfunction
+
+function! s:populate_fns()
+	let d = {}
+
+	execute "silent normal! :echo *(<Tab>\<c-a>\<c-\>eextend(l:d,{'cmdline':getcmdline(),'empty':''}).empty\n"
+
+	if !has_key(d, 'cmdline') || d['cmdline'] =~ "\<C-A>"
+		echoerr "cartographer: couldn't grab script function ids"
+		return
+	endif
+
+	let ents = split(d['cmdline'], ' ')
+	call filter(ents, { i, v -> stridx(v, "<SNR>") == 0 })
+	call map(ents, { i, v -> substitute(substitute(v, "<SNR>", "", ""), "(.*", "", "") })
+	" ents = ['10_fn_name', '20_fn_other', ...]
+
+	let s:script_fns = ents
 endfunction
 
 function! s:parse_command(s)
