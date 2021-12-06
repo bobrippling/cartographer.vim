@@ -3,6 +3,30 @@ let s:log = {}
 let s:cmds = {}
 let s:script_names = ''
 
+let s:completion_res = [
+\  'arglist',
+\  'color',
+\  'compiler',
+\  'cscope',
+\  'dir',
+\  'environment',
+\  'event',
+\  'expression',
+\  'file_in_path',
+\  'locale',
+\  'mapping',
+\  'option',
+\  'shellcmd',
+\  'tag_listfiles',
+\  'user',
+\  'var',
+\  'custom,\S+',
+\  'customlist,\S+',
+\]
+" the following are kept out - also commands:
+" augroup behave buffer command file filetype function help highlight history
+" lua mapclear menu messages packadd sign syntax syntime tag
+
 function! cartographer#show_log()
 	for k in keys(s:log)
 		let dupe = copy(s:log[k])
@@ -106,6 +130,15 @@ function! s:parse_command(s)
 		let addrtype = ""
 	endif
 
+	let completion = ""
+	for re in s:completion_res
+		if parts[i] =~ '^\v' .. re .. '$'
+			let completion = parts[i]
+			let i += 1
+			break
+		endif
+	endfor
+
 	let vim_cmd = join(parts[i:], " ")
 
 	return {
@@ -113,6 +146,7 @@ function! s:parse_command(s)
 	\   "args": args,
 	\   "range": range,
 	\   "addrtype": addrtype,
+	\   "completion": completion,
 	\   "name": name,
 	\   "vim_cmd": vim_cmd,
 	\ }
@@ -164,6 +198,21 @@ function! s:cmd_addrtype_expand(s)
 		return "-addr=other"
 	endif
 	return ""
+endfunction
+
+function! s:cmd_completion_expand(cmd)
+	let s = a:cmd.completion
+	if empty(s)
+		return s
+	endif
+
+	if empty(s:cmd_args_expand(a:cmd.args))
+		" -complete errors without -nargs (E1208)
+		"  e.g. :LspInfo from nvim-lspconfig
+		return ""
+	endif
+
+	return '-complete=' .. s
 endfunction
 
 function! CartographerLogCmd(name)
