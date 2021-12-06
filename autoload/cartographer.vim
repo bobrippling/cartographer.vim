@@ -20,8 +20,8 @@ let s:completion_res = [
 \  'tag_listfiles',
 \  'user',
 \  'var',
-\  'custom,\S+',
-\  'customlist,\S+',
+\  'custom',
+\  'customlist',
 \]
 " the following are kept out - also commands:
 " augroup behave buffer command file filetype function help highlight history
@@ -214,8 +214,9 @@ endfunction
 
 function! s:cmd_completion_expand(cmd)
 	let s = a:cmd.completion
-	if empty(s)
-		return s
+	if empty(s) || s =~ '\vcustom(list)?'
+		" bug: can't get the custom/customlist back out, so we turn it off
+		return ''
 	endif
 
 	if empty(s:cmd_args_expand(a:cmd.args))
