@@ -8,7 +8,7 @@ finish
 let s:cmds = {}
 let s:log = {}
 
-let s:script_fns = []
+let s:script_names = ''
 
 function! s:show_log()
 	for k in keys(s:log)
@@ -34,9 +34,8 @@ function! s:install()
 endfunction
 
 function! s:hook_cmd(cmd)
-	let current = split(execute("command " .. a:cmd), "\n")[1:]
-	call assert_equal(len(current), 1)
-	let current = current[0]
+	let command_output = split(execute("verbose command " .. a:cmd), "\n")[1:]
+	let current = command_output[0]
 
 	let cmd = s:parse_command(current)
 
@@ -45,15 +44,25 @@ function! s:hook_cmd(cmd)
 	let munged_cmd = cmd.vim_cmd
 	if cmd.vim_cmd =~ '\<s:'
 		" Need to handle cmd.vim_cmd containing <SID>... - currently resolves to this script, need to resolve to the other
-		if empty(s:script_fns)
-			call s:populate_fns()
+		let from = command_output[1] " Last set from path/to/script.vim line 32
+		let file = substitute(from, '\s*Last set from \(.*\) line \d\+', '\1', '')
+
+		if empty(s:script_names)
+			let script_names = split(execute('scriptnames'), "\n")
+			let map = {}
+
+			for s in script_names
+				" ' 32: ~/.config/dotfiles/.vim/plugin/basic/statusline.vim'
+				let parts = split(s, ' ')
+				let id = str2nr(parts[0][:-2])
+				let fname = parts[1]
+				let map[fname] = id
+			endfor
+
+			let s:script_names = map
 		endif
 
-		let munged_cmd = substitute(
-		\   munged_cmd,
-		\   '\<s:\k\+',
-		\   function('s:lookup_cmd'),
-		\   'g')
+		let munged_cmd = substitute(munged_cmd, '\<s:\ze\k\+', '<SNR>' .. s:script_names[file] .. '_', 'g')
 	endif
 
 	execute "command!"
@@ -63,38 +72,6 @@ function! s:hook_cmd(cmd)
 	\   s:cmd_addrtype_expand(cmd.addrtype)
 	\   cmd.name
 	\   "call CartographerLogCmd('" . cmd.name . "') | " munged_cmd
-endfunction
-
-function! s:lookup_cmd(matchlist)
-	" called with matchlist = 's:funcname'
-
-	let needle = a:matchlist[0][2:]
-	for ent in s:script_fns
-		if stridx(ent, needle) != -1
-			return "<SNR>" .. ent
-		endif
-	endfor
-
-	echoerr "couldn't find SNR command for " .. needle
-	return ''
-endfunction
-
-function! s:populate_fns()
-	let d = {}
-
-	execute "silent normal! :echo *(<Tab>\<c-a>\<c-\>eextend(l:d,{'cmdline':getcmdline(),'empty':''}).empty\n"
-
-	if !has_key(d, 'cmdline') || d['cmdline'] =~ "\<C-A>"
-		echoerr "cartographer: couldn't grab script function ids"
-		return
-	endif
-
-	let ents = split(d['cmdline'], ' ')
-	call filter(ents, { i, v -> stridx(v, "<SNR>") == 0 })
-	call map(ents, { i, v -> substitute(substitute(v, "<SNR>", "", ""), "(.*", "", "") })
-	" ents = ['10_fn_name', '20_fn_other', ...]
-
-	let s:script_fns = ents
 endfunction
 
 function! s:parse_command(s)
