@@ -2,7 +2,7 @@
 
 " inspired by plug.vim, plug#end()
 
-if get(g:, 'cargographer_enabled', 0)
+if get(g:, 'cartographer_enabled', 0)
 	call cartographer#install()
 
 	command! CartographerLog call cartographer#show_log()

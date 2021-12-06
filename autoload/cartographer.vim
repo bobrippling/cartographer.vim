@@ -79,13 +79,25 @@ function! s:hook_cmd(command, verbose)
 		let munged_cmd = substitute(munged_cmd, '\<s:\ze\k\+', '<SNR>' .. s:script_names[file] .. '_', 'g')
 	endif
 
-	execute "command!"
-	\   s:cmd_flags_expand(cmd.flags)
-	\   s:cmd_args_expand(cmd.args)
-	\   s:cmd_range_expand(cmd.range)
-	\   s:cmd_addrtype_expand(cmd.addrtype)
-	\   cmd.name
-	\   "call CartographerLogCmd('" . cmd.name . "') | " munged_cmd
+	let hook_cmd = "command!"
+	\ .. " " .. s:cmd_flags_expand(cmd.flags)
+	\ .. " " .. s:cmd_args_expand(cmd.args)
+	\ .. " " .. s:cmd_range_expand(cmd.range)
+	\ .. " " .. s:cmd_addrtype_expand(cmd.addrtype)
+	\ .. " " .. s:cmd_completion_expand(cmd)
+	\ .. " " .. cmd.name
+	\ .. " " .. "call CartographerLogCmd('" . cmd.name . "') |"
+	\ .. " " .. munged_cmd
+
+	try
+		execute hook_cmd
+	catch /./
+		echohl ErrorMsg
+		echomsg "cartographer couldn't hook :" .. cmd.name
+		echomsg "  error:" v:exception
+		echomsg "  with:" hook_cmd
+		echohl none
+	endtry
 endfunction
 
 function! s:parse_command(s)
