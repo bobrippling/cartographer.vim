@@ -26,25 +26,24 @@ endfunction
 command! CartographerLog call s:show_log()
 
 function! s:install()
-	call s:hook_cmd("Ttysplit")
+	call s:hook_cmds()
 
 	" TODO
 	"call s:install_cmds()
 	"call s:install_maps() / s:hook_map(...)
+
+	" call s:hook_map()
 endfunction
 
-function! s:hook_cmd(cmd)
-	let command_output = split(execute("verbose command " .. a:cmd), "\n")[1:]
-	let current = command_output[0]
-
-	let cmd = s:parse_command(current)
+function! s:hook_cmd(command, verbose)
+	let cmd = s:parse_command(a:command)
 
 	let s:cmds[cmd.name] = cmd
 
 	let munged_cmd = cmd.vim_cmd
 	if cmd.vim_cmd =~ '\<s:'
 		" Need to handle cmd.vim_cmd containing <SID>... - currently resolves to this script, need to resolve to the other
-		let from = command_output[1] " Last set from path/to/script.vim line 32
+		let from = a:verbose " 'Last set from path/to/script.vim line 32'
 		let file = substitute(from, '\s*Last set from \(.*\) line \d\+', '\1', '')
 
 		if empty(s:script_names)
@@ -84,7 +83,7 @@ function! s:parse_command(s)
 		" ! -bang
 		" " -register
 		" | -bar
-		" b -buffer
+		" b -buffers
 		let flags = parts[i]
 		let i += 1
 	endif
@@ -133,7 +132,7 @@ function! s:cmd_flags_expand(s)
 	if stridx(a:s, "!") >= 0 | call add(r, "-bang") | endif
 	if stridx(a:s, '"') >= 0 | call add(r, "-register") | endif
 	if stridx(a:s, '|') >= 0 | call add(r, "-bar") | endif
-	if stridx(a:s, 'b') >= 0 | call add(r, "-buffer") | endif
+	if stridx(a:s, 'b') >= 0 | call add(r, "-buffers") | endif
 	return join(r, " ")
 endfunction
 
@@ -158,8 +157,22 @@ endfunction
 function! s:cmd_addrtype_expand(s)
 	if empty(a:s) || a:s ==# "line"
 		return ""
+	elseif a:s ==# "arg"
+		return "-addr=arguments"
+	elseif a:s ==# "buf"
+		return "-addr=buffers"
+	elseif a:s ==# "load"
+		return "-addr=loaded_buffers"
+	elseif a:s ==# "win"
+		return "-addr=windows"
+	elseif a:s ==# "tab"
+		return "-addr=tabs"
+	elseif a:s ==# "qf"
+		return "-addr=quickfix"
+	elseif a:s ==# "?"
+		return "-addr=other"
 	endif
-	return "-addr=" . a:s
+	return ""
 endfunction
 
 function! CartographerLogCmd(name)
@@ -176,26 +189,19 @@ function! CartographerLogCmd(name)
 	\ )
 endfunction
 
-call s:install()
+function! s:hook_cmds()
+	let commands = split(execute("verbose command"), "\n")[1:]
 
-finish
+	for i in range(0, len(commands) - 1, 2)
+		let command = commands[i]
+		let verbose = commands[i + 1]
 
-function! s:install_cmds()
-	let commands = split(execute("command"), "\n")[1:]
-
-	"call map(commands, { i, c -> substitute(c, '^....\(\S\+\)\s.*', '\1', '') })
-
-	for cmd in commands
-		let cmd = s:parse_command(cmd)
-
-		" TODO: split cmd so we can recreate it later
-		let [chars, name, args, range, completion, definition] = cmd
-
-		execute printf(
-		\  'command! -nargs=* -range -bang -complete=file %s call s:lod_cmd(%s, "<bang>", <line1>, <line2>, <q-args>, %s)',
-		\  cmd, string(cmd), string(names))
+		call s:hook_cmd(command, verbose)
 	endfor
 endfunction
+
+call s:install()
+finish
 
 " TODO
 
