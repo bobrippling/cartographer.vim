@@ -4,6 +4,13 @@ for i, mapping in pairs(keymap) do
 	local remap = mapping.noremap and "n" or ""
 
 	if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
+		local scriptpath = nil
+		if mapping.sid > 0 then
+			scriptpath = vim.fn.getscriptinfo({ sid = mapping.sid })[1].name
+		else
+			scriptpath = "<builtin?>"
+		end
+
 		vim.api.nvim_set_keymap(
 			mapping.mode,
 			mapping.lhs,
@@ -17,8 +24,9 @@ for i, mapping in pairs(keymap) do
 				--abbr = mapping.abbr,
 				--buffer = mapping.buffer,
 
-				desc = "cartographer: " .. mapping.lhs .. " -> " .. mapping.rhs,
-				-- "Last set from " .. scripts[mapping.sid] .. " line " .. mapping.lnum
+				desc =
+					"cartographer: " .. mapping.lhs .. " -> " .. mapping.rhs ..
+					" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 				callback = function()
 					vim.fn.CartographerLog(mapping.lhs, "map")
