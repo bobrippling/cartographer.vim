@@ -23,7 +23,7 @@ local function hook_keymaps()
 					script = mapping.script,
 					silent = mapping.silent,
 					--abbr = mapping.abbr,
-					--buffer = mapping.buffer,
+					--buffer = mapping.buffer, TODO
 
 					desc =
 						"cartographer: " .. mapping.lhs .. " -> " .. mapping.rhs ..
