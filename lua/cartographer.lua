@@ -51,10 +51,10 @@ local function hook_keymaps()
 				"", --mapping.rhs, -- ignored
 				{
 					noremap = mapping.noremap,
-					expr = mapping.expr,
-					nowait = mapping.nowait,
-					script = mapping.script,
-					silent = mapping.silent,
+					expr = mapping.expr ~= 0,
+					nowait = mapping.nowait ~= 0,
+					script = mapping.script ~= 0,
+					silent = mapping.silent ~= 0,
 					--abbr = mapping.abbr,
 					--buffer = mapping.buffer, TODO
 
@@ -66,7 +66,7 @@ local function hook_keymaps()
 						log_timestamp(mapping.sid, "mappings", mapping.lhs)
 
 						local out
-						if mapping.expr then
+						if mapping.expr and mapping.expr ~= 0 then
 							out = vim.fn.eval(mapping.rhs)
 						else
 							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, false, true)
