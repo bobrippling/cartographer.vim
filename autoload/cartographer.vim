@@ -55,11 +55,15 @@ function! s:hook_cmd(command, verbose)
 
 	let s:cmds[cmd.name] = cmd
 
+	let from = a:verbose " 'Last set from path/to/script.vim line 32'
+	let file = substitute(from, '\s*Last set from \(.*\) line \d\+', '\1', '')
+	let line = substitute(from, '\s*Last set from .* line \(\d\+\)', '\1', '')
+	let cmd["orig_file"] = file
+	let cmd["orig_line"] = line
+
 	let munged_cmd = cmd.vim_cmd
 	if cmd.vim_cmd =~ '\<s:'
 		" Need to handle cmd.vim_cmd containing <SID>... - currently resolves to this script, need to resolve to the other
-		let from = a:verbose " 'Last set from path/to/script.vim line 32'
-		let file = substitute(from, '\s*Last set from \(.*\) line \d\+', '\1', '')
 
 		if empty(s:script_names)
 			let script_names = split(execute('scriptnames'), "\n")
