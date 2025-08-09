@@ -128,7 +128,7 @@ function! s:parse_command(s)
 	" %: -range=%
 	" [0-9]: -range=N
 	" .: -range
-	if parts[i] =~ '[0-9.%]'
+	if parts[i] =~ '^[0-9.%]'
 		let range = parts[i]
 		let i += 1
 	else
@@ -189,7 +189,11 @@ function! s:cmd_range_expand(s)
 	elseif a:s =~ '^[0-9]\+$'
 		return "-range=" . a:s
 	else
-		return "-count=" . a:s[:len(a:s)-2]
+		let n = a:s[:len(a:s)-2]
+		if n !~ '^[0-9]\+$'
+			throw "invalid count for command's range (\"" . n . "\") - indicates a parser bug"
+		endif
+		return "-count=" . n
 	endif
 endfunction
 
