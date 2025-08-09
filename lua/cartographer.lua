@@ -1,6 +1,9 @@
 local M = {}
 
-local FNAME_LOG = vim.fn.stdpath("log") .. "/cartographer.log"
+local DIR_LOG = vim.fn.stdpath("log")
+local FNAME_LOG = DIR_LOG .. "/cartographer.log"
+local FNAME_LOG_NOTFOUND = DIR_LOG .. "/cartographer_rejects.log"
+DIR_LOG = nil
 
 local replace_placeholders
 local scriptname
@@ -291,6 +294,8 @@ function M.install()
 	hook_keymaps()
 
 	local log_with_scriptnames = load_table(FNAME_LOG) or {}
+	local rejects = {}
+	local got_reject = false
 
 	scriptlog = {}
 	for fname, ents in pairs(log_with_scriptnames) do
@@ -302,7 +307,14 @@ function M.install()
 			scriptlog[sid] = ents
 		else
 			emit_err(("Cartographer: no <SID> for filename %q"):format(fname))
+			rejects[fname] = ents
+			got_reject = true
 		end
+	end
+
+	if got_reject then
+		save_table(rejects, FNAME_LOG_NOTFOUND)
+		emit_err(("Cartographer: rejects saved to %q"):format(FNAME_LOG_NOTFOUND))
 	end
 end
 
