@@ -2,6 +2,25 @@ local M = {}
 
 local replace_placeholders
 local scriptname
+local timestamp
+local scriptlog = {} --[[
+	{
+		[sid] = {
+			commands = {
+				[name] = Timestamps
+			},
+			mappings = {
+				[lhs] = Timestamps
+			}
+		}
+	}
+
+	Timestamps = {
+		earliest = <timestamp>
+		latest = <timestamp>
+		uses = number
+	}
+]]
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
@@ -30,7 +49,7 @@ local function hook_keymaps()
 						" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 					callback = function()
-						vim.fn.CartographerLog(mapping.lhs, "map")
+						timestamp(mapping.sid, "mappings", mapping.lhs)
 
 						local out
 						if mapping.expr then
@@ -85,6 +104,8 @@ local function hook_cmds()
 		vim.api.nvim_create_user_command(
 			cmd.name,
 			function(details)
+				timestamp(cmd.script_id, "commands", cmd.name)
+
 				-- details.{name,args,fargs,nargs,bang,line1,line2,range,count,reg,mods,smods}
 
 				-- deal with q- and f-<...>
@@ -181,9 +202,59 @@ function scriptname(sid)
 	end
 end
 
+function timestamp(sid, ty, entry)
+	local log = scriptlog[sid]
+	if not log then
+		log = {}
+		scriptlog[sid] = log
+	end
+	local t = log[ty]
+	if not t then
+		t = {}
+		log[ty] = t
+	end
+	local ent = t[entry]
+	if not ent then
+		ent = { uses = 0 }
+		t[entry] = ent
+	end
+
+	local now = os.time()
+	if not ent.earliest then
+		ent.earliest = now
+	end
+	ent.latest = now
+	ent.uses = ent.uses + 1
+end
+
 function M.install()
 	hook_cmds()
 	hook_keymaps()
+end
+
+function M.show_log()
+	for sid, types in pairs(scriptlog or {}) do
+		local latest, earliest
+		local uses = 0
+
+		for _, ty in pairs(types or {}) do
+			for _, ts in pairs(ty) do
+				uses = uses + ts.uses
+				if latest == nil or ts.latest > latest then
+					latest = ts.latest
+				end
+				if earliest == nil or ts.earliest < earliest then
+					earliest = ts.earliest
+				end
+			end
+		end
+
+		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
+		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
+		local script = scriptname(sid)
+
+		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid)))
+	end
 end
 
 return M
