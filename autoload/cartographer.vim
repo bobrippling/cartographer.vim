@@ -9,3 +9,7 @@ function! cartographer#install()
 
 	lua require('cartographer').install()
 endfunction
+
+function! cartographer#exit()
+	lua require('cartographer').exit()
+endfunction

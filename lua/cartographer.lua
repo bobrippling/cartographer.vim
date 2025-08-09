@@ -1,9 +1,17 @@
 local M = {}
 
+local FNAME_LOG = vim.fn.stdpath("log") .. "/cartographer.log"
+
 local replace_placeholders
 local scriptname
 local timestamp
-local scriptlog = {} --[[
+local serialize_table
+local save_table
+local load_table
+local fname_to_sid
+local emit_err
+
+local scriptlog --[[
 	{
 		[sid] = {
 			commands = {
@@ -227,9 +235,85 @@ function timestamp(sid, ty, entry)
 	ent.uses = ent.uses + 1
 end
 
+function serialize_table(tbl)
+	local result = {}
+	for k, v in pairs(tbl) do
+		if type(k) == "string" then
+			k = ("%q"):format(k)
+		end
+		if type(v) == "table" then
+			v = serialize_table(v)
+		elseif type(v) == "string" then
+			v = ("%q"):format(v)
+		end
+		table.insert(result, string.format("[%s] = %s", k, v))
+	end
+	return "{" .. table.concat(result, ", ") .. "}"
+end
+
+function save_table(tbl, filename)
+	local file = io.open(filename, "w")
+	if not file then
+		return false
+	end
+	file:write("return " .. serialize_table(tbl) .. "\n")
+	file:close()
+	return true
+end
+
+function load_table(filename)
+	local file = io.open(filename, "r")
+	if not file then
+		return nil
+	end
+	local content = file:read("*a")
+	file:close()
+	return load(content)()
+end
+
+function fname_to_sid(fname)
+	local info = vim.fn.getscriptinfo({ name = "^" .. fname .. "$" }) -- not perfect
+	for _, script in pairs(info) do
+		if script.name == fname then
+			return script.sid
+		end
+	end
+end
+
+function emit_err(msg) -- can't handle single quotes
+	vim.cmd.echohl("Error")
+	vim.cmd.echo(("'%s'"):format(msg))
+	vim.cmd.echohl("None")
+end
+
 function M.install()
 	hook_cmds()
 	hook_keymaps()
+
+	local log_with_scriptnames = load_table(FNAME_LOG) or {}
+
+	scriptlog = {}
+	for fname, ents in pairs(log_with_scriptnames) do
+		local sid = fname_to_sid(fname)
+		if sid then
+			if vim.o.verbose >= 1 then
+				print(("Cartographer: resolved fname %q to SID %d"):format(fname, sid))
+			end
+			scriptlog[sid] = ents
+		else
+			emit_err(("Cartographer: no <SID> for filename %q"):format(fname))
+		end
+	end
+end
+
+function M.exit()
+	local log_with_scriptnames = {}
+
+	for sid, ents in pairs(scriptlog) do
+		log_with_scriptnames[scriptname(sid)] = ents
+	end
+
+	save_table(log_with_scriptnames, FNAME_LOG)
 end
 
 function M.show_log()
