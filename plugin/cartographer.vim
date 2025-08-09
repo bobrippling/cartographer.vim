@@ -12,7 +12,7 @@ endif
 
 lua require('cartographer').install()
 
-command! CartographerLog lua require('cartographer').show_log()
+command! -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
 
 augroup CartographerExit
 	autocmd!
