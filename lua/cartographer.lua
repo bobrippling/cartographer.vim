@@ -1,5 +1,7 @@
 local M = {}
 
+local scriptname
+
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
@@ -7,12 +9,7 @@ local function hook_keymaps()
 		local remap = mapping.noremap and "n" or ""
 
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
-			local scriptpath = nil
-			if mapping.sid > 0 then
-				scriptpath = vim.fn.getscriptinfo({ sid = mapping.sid })[1].name
-			else
-				scriptpath = "<builtin?>"
-			end
+			local scriptpath = scriptname(mapping.sid)
 
 			vim.api.nvim_set_keymap(
 				mapping.mode,
@@ -116,6 +113,14 @@ local function hook_cmds()
 				}
 			)
 		end
+	end
+end
+
+function scriptname(sid)
+	if sid > 0 then
+		return vim.fn.getscriptinfo({ sid = sid })[1].name
+	else
+		return "<builtin?>"
 	end
 end
 
