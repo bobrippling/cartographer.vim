@@ -31,10 +31,16 @@ local function hook_keymaps()
 					callback = function()
 						vim.fn.CartographerLog(mapping.lhs, "map")
 
+						local out
+						if mapping.expr then
+							out = vim.fn.eval(mapping.rhs)
+						else
+							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, false, true)
+						end
+
 						-- FIXME: this doesn't respect <silent>
 						-- - Use vim.cmd("silent ...") or nvim_cmd({ ..., silent = true }).
 						-- - Or feed keys that trigger a separately defined <silent> mapping.
-						local out = vim.api.nvim_replace_termcodes(mapping.rhs, true, false, true)
 						vim.api.nvim_feedkeys(out, remap, false)
 					end,
 				}
