@@ -255,12 +255,28 @@ endfunction
 function! s:hook_cmds()
 	let commands = split(execute("verbose command"), "\n")[1:]
 
-	for i in range(0, len(commands) - 1, 2)
-		let command = commands[i]
-		let verbose = commands[i + 1]
+	let command = ''
+	let i = 0
+	while i < len(commands)
+		let ent = commands[i]
+		let i += 1
+
+		if ent =~ '^\tLast set from '
+			let verbose = ent
+		elseif ent =~ '^....\S'
+			if !empty(command)
+				throw "cartographer: multiple commands found when parsing :command output"
+			endif
+			let command = ent
+			continue
+		elseif ent =~ '^ \{5,\}'
+			" docs - ignore
+			continue
+		endif
 
 		call s:hook_cmd(command, verbose)
-	endfor
+		let command = ''
+	endwhile
 endfunction
 
 finish
