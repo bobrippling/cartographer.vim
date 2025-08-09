@@ -95,7 +95,9 @@ function! s:hook_cmd(command, verbose)
 		echohl ErrorMsg
 		echomsg "cartographer couldn't hook :" .. cmd.name
 		echomsg "  error:" v:exception
-		echomsg "  with:" hook_cmd
+		echomsg "  running:" hook_cmd
+		echomsg "  original:" a:command
+		echomsg "  cmd:" cmd
 		echohl none
 	endtry
 endfunction
