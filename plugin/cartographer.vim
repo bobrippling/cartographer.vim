@@ -6,11 +6,15 @@ if !get(g:, 'cartographer_enabled', 1)
 	finish
 endif
 
-call cartographer#install()
+if !has("nvim")
+	throw "cartographer: can't install hooks - need neovim"
+endif
 
-command! CartographerLog call cartographer#show_log()
+lua require('cartographer').install()
+
+command! CartographerLog lua require('cartographer').show_log()
 
 augroup CartographerExit
 	autocmd!
-	autocmd VimLeave * call cartographer#exit()
+	autocmd VimLeave * lua require('cartographer').exit()
 augroup END
