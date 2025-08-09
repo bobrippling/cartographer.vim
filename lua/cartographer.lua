@@ -7,14 +7,15 @@ DIR_LOG = nil
 
 local replace_placeholders
 local scriptname
-local timestamp
+local log_timestamp
+local log_create
 local serialize_table
 local save_table
 local load_table
 local fname_to_sid
 local emit_err
 
-local scriptlog --[[
+local scriptlog = {} --[[
 	{
 		[sid] = {
 			commands = {
@@ -42,6 +43,8 @@ local function hook_keymaps()
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
 			local scriptpath = scriptname(mapping.sid, true)
 
+			log_create(mapping.sid, "mappings", mapping.lhs)
+
 			vim.api.nvim_set_keymap(
 				mapping.mode,
 				mapping.lhs,
@@ -60,7 +63,7 @@ local function hook_keymaps()
 						" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 					callback = function()
-						timestamp(mapping.sid, "mappings", mapping.lhs)
+						log_timestamp(mapping.sid, "mappings", mapping.lhs)
 
 						local out
 						if mapping.expr then
@@ -112,10 +115,11 @@ local function hook_cmds()
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 
+		log_create(cmd.script_id, "commands", cmd.name)
 		vim.api.nvim_create_user_command(
 			cmd.name,
 			function(details)
-				timestamp(cmd.script_id, "commands", cmd.name)
+				log_timestamp(cmd.script_id, "commands", cmd.name)
 
 				-- details.{name,args,fargs,nargs,bang,line1,line2,range,count,reg,mods,smods}
 
@@ -212,7 +216,7 @@ function scriptname(sid, default)
 	return default and "<builtin?>" or nil
 end
 
-function timestamp(sid, ty, entry)
+function log_create(sid, ty, entry)
 	local log = scriptlog[sid]
 	if not log then
 		log = {}
@@ -228,6 +232,11 @@ function timestamp(sid, ty, entry)
 		ent = { uses = 0 }
 		t[entry] = ent
 	end
+	return ent
+end
+
+function log_timestamp(sid, ty, entry)
+	local ent = log_create(sid, ty, entry)
 
 	local now = os.time()
 	if not ent.earliest then
@@ -296,7 +305,6 @@ function M.install()
 	local rejects = {}
 	local got_reject = false
 
-	scriptlog = {}
 	for fname, ents in pairs(log_with_scriptnames) do
 		local sid = fname_to_sid(fname)
 		if sid then
@@ -338,20 +346,25 @@ function M.show_log()
 		for _, ty in pairs(types or {}) do
 			for _, ts in pairs(ty) do
 				uses = uses + ts.uses
-				if latest == nil or ts.latest > latest then
-					latest = ts.latest
-				end
-				if earliest == nil or ts.earliest < earliest then
-					earliest = ts.earliest
+				if ts.latest then
+					if latest == nil or ts.latest > latest then
+						latest = ts.latest
+					end
+					if earliest == nil or ts.earliest < earliest then
+						earliest = ts.earliest
+					end
 				end
 			end
 		end
 
-		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
-		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
-		local script = scriptname(sid, true)
+		if earliest then
+			assert(latest, "can't have earliest without latest")
 
-		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", script))
+			local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
+			local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
+
+			print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid, true)))
+		end
 	end
 end
 
