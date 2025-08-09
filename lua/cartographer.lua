@@ -105,6 +105,12 @@ local function hook_cmds()
 							lt = "<", -- <lt> -> literal
 						}
 					)
+					:gsub(
+						"%f[%a]s:",
+						function(key)
+							return ("<SNR>%d_"):format(cmd.script_id)
+						end
+					)
 
 				vim.cmd(generated_cmd)
 			end,
