@@ -42,12 +42,7 @@ endfunction
 
 function! cartographer#install()
 	call s:hook_cmds()
-
-	" TODO
-	"call s:install_cmds()
-	"call s:install_maps() / s:hook_map(...)
-
-	" call s:hook_map()
+	call s:hook_maps()
 endfunction
 
 function! s:hook_cmd(command, verbose)
@@ -276,4 +271,12 @@ function! s:hook_cmds()
 		call s:hook_cmd(command, verbose)
 		let command = ''
 	endwhile
+endfunction
+
+function! s:hook_maps()
+	if !has("nvim")
+		throw "cartographer: can't hook maps - need neovim"
+	endif
+
+	lua require('cartographer')
 endfunction
