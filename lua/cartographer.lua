@@ -56,7 +56,9 @@ local function hook_cmds()
 	for i, cmd in pairs(cmds) do
 		-- TODO: handle cmd.buffer
 
-		cmd.nargs = tonumber(cmd.nargs)
+		if cmd.nargs:match("^[01]$") ~= nil then
+			cmd.nargs = tonumber(cmd.nargs)
+		end
 
 		if cmd.range == "." then
 			cmd.range = nil -- -range
