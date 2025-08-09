@@ -1,5 +1,6 @@
 local M = {}
 
+local replace_placeholders
 local scriptname
 
 local function hook_keymaps()
@@ -86,9 +87,26 @@ local function hook_cmds()
 			function(details)
 				-- details.{name,args,fargs,nargs,bang,line1,line2,range,count,reg,mods,smods}
 
-				-- TODO: test
-				vim.cmd.echom('"' .. cmd.definition:gsub('"', '\\"') .. '"')
-				vim.cmd(cmd.definition)
+				-- deal with q- and f-<...>
+				local generated_cmd =
+					replace_placeholders(
+						cmd.definition,
+						{
+							args = details.fargs, -- table
+							--args = details.args, -- string
+							bang = details.bang,
+							count = details.count ~= -1 and details.count or nil,
+							line1 = details.line1,
+							line2 = details.line2,
+							range = details.range,
+							reg = details.reg,
+							register = details.reg,
+							mods = details.mods, -- smods: {}, mods: string
+							lt = "<", -- <lt> -> literal
+						}
+					)
+
+				vim.cmd(generated_cmd)
 			end,
 			{
 				force = true,
@@ -112,6 +130,41 @@ local function hook_cmds()
 			}
 		)
 	end
+end
+
+function replace_placeholders(str, values)
+	return str:gsub("<(.-)>", function(key)
+		local prefix, name = key:match("^(.-)%-(.+)$")
+		if not prefix then
+			-- no f- or q-
+			name = key
+		end
+
+		local value = values[name]
+		if value == nil then
+			return "<" .. key .. ">"
+		end
+
+		if prefix == "f" then
+			if type(value) == "table" then
+				local quoted = {}
+				for _, v in ipairs(value) do
+					table.insert(quoted, string.format("%q", v))
+				end
+				return table.concat(quoted, ", ")
+			else
+				return string.format("%q", tostring(value))
+			end
+		elseif prefix == "q" then
+			return string.format("%q", type(value) == "table" and table.concat(value, " ") or tostring(value))
+		else
+			if type(value) == "table" then
+				return table.concat(value, " ")
+			else
+				return tostring(value)
+			end
+		end
+	end)
 end
 
 function scriptname(sid)
