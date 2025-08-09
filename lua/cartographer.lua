@@ -338,7 +338,9 @@ function M.exit()
 	save_table(log_with_scriptnames, FNAME_LOG)
 end
 
-function M.show_log()
+function M.show_log(q_bang)
+	local missing = q_bang:len() > 0 and {}
+
 	for sid, types in pairs(scriptlog or {}) do
 		local latest, earliest
 		local uses = 0
@@ -364,7 +366,17 @@ function M.show_log()
 			local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
 
 			print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid, true)))
+		elseif missing then
+			assert(uses == 0)
+			local script = scriptname(sid, false)
+			if script then
+				table.insert(missing, script)
+			end
 		end
+	end
+
+	for _, fname in pairs(missing or {}) do
+		print(("%s: no uses!"):format(fname))
 	end
 end
 
