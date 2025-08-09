@@ -28,15 +28,15 @@ let s:completion_res = [
 " lua mapclear menu messages packadd sign syntax syntime tag
 
 function! cartographer#show_log()
-	for k in keys(s:log)
-		let dupe = copy(s:log[k])
+	for name in keys(s:log)
+		let dupe = copy(s:log[name])
 		call map(dupe, { _, v -> v.when })
 		call sort(dupe)
 
 		let earliest = strftime("%Y-%m-%d %H:%M", dupe[0])
 		let latest = strftime("%Y-%m-%d %H:%M", dupe[len(dupe) - 1])
 
-		echo k .. ":" len(s:log[k]) "uses, earliest at" earliest .. ", latest at" latest
+		echo name .. ":" len(s:log[name]) "uses, earliest at" earliest .. ", latest at" latest
 	endfor
 endfunction
 
