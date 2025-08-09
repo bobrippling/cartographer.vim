@@ -102,6 +102,11 @@ local function hook_cmds()
 				--preview = cmd.preview, -- FIXME: boolean comes through???
 				range = cmd.range,
 				register = cmd.register,
+
+				desc =
+					"cartographer: " .. cmd.name .. " -> " .. cmd.definition ..
+					" (" .. "Last set from " .. scriptname(cmd.script_id) .. ")",
+
 			}
 		)
 	end
