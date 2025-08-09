@@ -1,3 +1,5 @@
+local M = {}
+
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
@@ -117,5 +119,9 @@ local function hook_cmds()
 	end
 end
 
-hook_cmds()
-hook_keymaps()
+function M.install()
+	hook_cmds()
+	hook_keymaps()
+end
+
+return M

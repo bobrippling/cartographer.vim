@@ -18,7 +18,7 @@ function! cartographer#install()
 		throw "cartographer: can't hook maps - need neovim"
 	endif
 
-	lua require('cartographer')
+	lua require('cartographer').install()
 endfunction
 
 function! CartographerLog(name, cmd_or_map)
