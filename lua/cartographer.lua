@@ -153,6 +153,7 @@ local function hook_cmds()
 			{
 				force = true,
 
+				-- true/1 and false/0 are interchangeable here
 				addr = cmd.addr,
 				bang = cmd.bang,
 				bar = cmd.bar,
