@@ -9,6 +9,7 @@ local replace_placeholders
 local scriptname
 local log_timestamp
 local log_create
+local log_hooked
 local serialize_table
 local save_table
 local load_table
@@ -33,6 +34,7 @@ local scriptlog = {} --[[
 		uses = number
 	}
 ]]
+local hooked = {} -- { [sid] = true }
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
@@ -43,7 +45,7 @@ local function hook_keymaps()
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
 			local scriptpath = scriptname(mapping.sid, true)
 
-			log_create(mapping.sid, "mappings", mapping.lhs)
+			log_hooked(mapping.sid)
 
 			vim.api.nvim_set_keymap(
 				mapping.mode,
@@ -115,7 +117,8 @@ local function hook_cmds()
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 
-		log_create(cmd.script_id, "commands", cmd.name)
+		log_hooked(cmd.script_id)
+
 		vim.api.nvim_create_user_command(
 			cmd.name,
 			function(details)
@@ -215,6 +218,10 @@ function scriptname(sid, default)
 		return vim.fn.getscriptinfo({ sid = sid })[1].name
 	end
 	return default and "<builtin?>" or nil
+end
+
+function log_hooked(sid)
+	hooked[sid] = true
 end
 
 function log_create(sid, ty, entry)
@@ -340,44 +347,38 @@ function M.exit()
 end
 
 function M.show_log(q_bang)
-	local missing = q_bang:len() > 0 and {}
-
-	for sid, types in pairs(scriptlog or {}) do
+	for sid, types in pairs(scriptlog) do
 		local latest, earliest
 		local uses = 0
 
-		for _, ty in pairs(types or {}) do
+		for _, ty in pairs(types) do
 			for _, ts in pairs(ty) do
 				uses = uses + ts.uses
-				if ts.latest then
-					if latest == nil or ts.latest > latest then
-						latest = ts.latest
-					end
-					if earliest == nil or ts.earliest < earliest then
-						earliest = ts.earliest
-					end
+				if latest == nil or ts.latest > latest then
+					latest = ts.latest
+				end
+				if earliest == nil or ts.earliest < earliest then
+					earliest = ts.earliest
 				end
 			end
 		end
 
-		if earliest then
-			assert(latest, "can't have earliest without latest")
+		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
+		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
 
-			local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
-			local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
-
-			print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid, true)))
-		elseif missing then
-			assert(uses == 0)
-			local script = scriptname(sid, false)
-			if script then
-				table.insert(missing, script)
-			end
-		end
+		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid, true)))
 	end
 
-	for _, fname in pairs(missing or {}) do
-		print(("%s: no uses!"):format(fname))
+	if q_bang:len() > 0 then
+		for sid, ent in pairs(hooked) do
+			if not scriptlog[sid] then
+				local fname = scriptname(sid, false)
+
+				if fname then
+					print(("%s: no uses!"):format(fname))
+				end
+			end
+		end
 	end
 end
 
