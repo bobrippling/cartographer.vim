@@ -90,7 +90,7 @@ function! s:hook_cmd(command, verbose)
 	\ .. " " .. s:cmd_addrtype_expand(cmd.addrtype)
 	\ .. " " .. s:cmd_completion_expand(cmd)
 	\ .. " " .. cmd.name
-	\ .. " " .. "call CartographerLogCmd('" . cmd.name . "') |"
+	\ .. " " .. "call CartographerLog('" . cmd.name . "', 'cmd') |"
 	\ .. " " .. munged_cmd
 
 	try
@@ -238,14 +238,13 @@ function! s:cmd_completion_expand(cmd)
 	return '-complete=' .. s
 endfunction
 
-function! CartographerLogCmd(name)
-	let cmd = s:cmds[a:name]
-
-	if !has_key(s:log, a:name)
-		let s:log[a:name] = []
+function! CartographerLog(name, cmd_or_map)
+	let key = a:name .. " (" .. a:cmd_or_map .. ")"
+	if !has_key(s:log, key)
+		let s:log[key] = []
 	endif
 	call add(
-	\  s:log[a:name],
+	\  s:log[key],
 	\  {
 	\    'when': localtime(),
 	\  }
