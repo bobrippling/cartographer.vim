@@ -40,7 +40,7 @@ local function hook_keymaps()
 		local remap = mapping.noremap and "n" or ""
 
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
-			local scriptpath = scriptname(mapping.sid)
+			local scriptpath = scriptname(mapping.sid, true)
 
 			vim.api.nvim_set_keymap(
 				mapping.mode,
@@ -163,7 +163,7 @@ local function hook_cmds()
 
 				desc =
 					"cartographer: " .. cmd.name .. " -> " .. cmd.definition ..
-					" (" .. "Last set from " .. scriptname(cmd.script_id) .. ")",
+					" (" .. "Last set from " .. scriptname(cmd.script_id, true) .. ")",
 
 			}
 		)
@@ -205,12 +205,11 @@ function replace_placeholders(str, values)
 	end)
 end
 
-function scriptname(sid)
+function scriptname(sid, default)
 	if sid > 0 then
 		return vim.fn.getscriptinfo({ sid = sid })[1].name
-	else
-		return "<builtin?>"
 	end
+	return default and "<builtin?>" or nil
 end
 
 function timestamp(sid, ty, entry)
@@ -322,7 +321,10 @@ function M.exit()
 	local log_with_scriptnames = {}
 
 	for sid, ents in pairs(scriptlog) do
-		log_with_scriptnames[scriptname(sid)] = ents
+		local fname = scriptname(sid, false)
+		if fname then
+			log_with_scriptnames[fname] = ents
+		end
 	end
 
 	save_table(log_with_scriptnames, FNAME_LOG)
@@ -347,9 +349,9 @@ function M.show_log()
 
 		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
 		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
-		local script = scriptname(sid)
+		local script = scriptname(sid, true)
 
-		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid)))
+		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", script))
 	end
 end
 
