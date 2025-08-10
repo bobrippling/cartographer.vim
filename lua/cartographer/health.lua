@@ -48,7 +48,7 @@ M.check = function()
 
 			for name, summary in pairs(ents) do
 				if summary.uses == 0 then
-					table.insert(no_uses, ("Unused %s: %q"):format(ty, name))
+					table.insert(no_uses, ("Unused %s: \"%s\""):format(ty, name))
 				else
 					local tbl
 					local old_warn = ""
