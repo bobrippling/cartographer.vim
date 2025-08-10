@@ -131,6 +131,11 @@ function can_remap_mode(mode)
 		return false
 	end
 
+	if mode:match("o") then
+		-- can't remap operator-pending at the moment, not sure why
+		return false
+	end
+
 	return true
 end
 
