@@ -50,8 +50,12 @@ local function hook_keymaps()
 
 	for i, mapping in pairs(keymap) do
 		local remap = nil_or_zero(mapping.noremap)
+		local is_plug = mapping.lhs:match("^<Plug>")
 
-		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
+		if mapping.rhs ~= nil
+			and mapping.mode:gsub("%s+", ""):len() > 0
+			and not is_plug
+		then
 			local scriptpath = scriptname(mapping.sid, true)
 
 			log_hooked(mapping.sid, "mapping", mapping.lhs)
