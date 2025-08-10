@@ -396,4 +396,50 @@ function M.show_log(q_bang)
 	end
 end
 
+function M.usage_summary()
+	local summary = {} --[[
+		{ [fname] = {
+		  mappings = { [lhs] = { uses } } -- including 0 uses
+		  commands = { [cmd] = { uses } }
+		}}
+	]]
+
+	for sid, hooked_types in pairs(hooked) do
+		local fname = scriptname(sid, false)
+
+		if fname then
+			summary[fname] = {}
+
+			for ty, hook_entries in pairs(hooked_types) do
+				for name, details in pairs(hook_entries) do
+					local ent = scriptlog[sid]
+						and scriptlog[sid][ty]
+						and scriptlog[sid][ty][name]
+
+					local uses = 0
+					local earliest, latest
+
+					if ent then
+						uses = ent.uses or 0
+						earliest = ent.earliest
+						latest = ent.latest
+					end
+
+					if not summary[fname][ty] then
+						summary[fname][ty] = {}
+					end
+
+					summary[fname][ty][name] = {
+						uses = uses,
+						earliest = earliest,
+						latest = latest,
+					}
+				end
+			end
+		end
+	end
+
+	return summary
+end
+
 return M

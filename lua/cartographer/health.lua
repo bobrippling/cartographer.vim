@@ -1,0 +1,70 @@
+local M = {}
+
+local function stats(summary)
+	local earliest, latest
+
+	for _, types in pairs(summary) do
+		for _, ents in pairs(types) do
+			for _, summary in pairs(ents) do
+				if earliest == nil or (summary.earliest and summary.earliest < earliest) then
+					earliest = summary.earliest
+				end
+				if latest == nil or (summary.latest and summary.latest > latest) then
+					latest = summary.latest
+				end
+			end
+		end
+	end
+
+	if earliest then
+		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
+		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
+		return earliest_str, latest_str
+	end
+end
+
+M.check = function()
+	local C = require("cartographer")
+	local script_summary = C.usage_summary()
+
+	local earliest, latest = stats(script_summary)
+	if earliest then
+		vim.health.info(("Oldest event %s, newest event %s"):format(earliest, latest))
+	else
+		vim.health.warn("No gathered statistics")
+	end
+
+	for fname, types in pairs(script_summary) do
+		local no_uses = {}
+
+		vim.health.start(("Script %s:"):format(fname))
+
+		for ty, ents in pairs(types) do -- mappings/commands
+			local total = 0
+			local uses = 0
+
+			for name, summary in pairs(ents) do
+				if summary.uses == 0 then
+					table.insert(no_uses, ("Unused %s: %q"):format(ty, name))
+				else
+					uses = uses + 1
+				end
+				total = total + 1
+			end
+
+			local fn
+			if uses == 0 then
+				fn = vim.health.error
+			else
+				fn = vim.health.info
+			end
+			fn(("%.0f%% of %s used (%d / %d)"):format(uses / total * 100, ty, uses, total))
+		end
+
+		for _, ent in pairs(no_uses) do
+			vim.health.warn(ent)
+		end
+	end
+end
+
+return M
