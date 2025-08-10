@@ -93,6 +93,14 @@ local function hook_keymaps()
 	end
 end
 
+local function ensure_int(d, key)
+	local n = type(d[key]) == "string" and d[key]:match("^(%d+)$")
+
+	if n then
+		d[key] = tonumber(n)
+	end
+end
+
 local function hook_cmds()
 	local cmds = vim.api.nvim_get_commands({})
 
@@ -104,19 +112,20 @@ local function hook_cmds()
 			cmd.nargs = tonumber(cmd.nargs)
 		end
 
+		-- convert in to out
 		if cmd.range == "." then
-			cmd.range = nil -- -range
-		elseif cmd.range == "%" then
-			cmd.range = "%" -- -range=%
-		elseif cmd.range ~= nil then
-			local n = cmd.range:match("(%d+)$") -- -count=N
-			if n ~= nil then
-				cmd.range = nil
-				cmd.count = tonumber(n)
-			else
-				cmd.range = "-range=" .. cmd.range
-			end
+			cmd.range = true
 		end
+
+		-- if there is count and range (from nvim:api/command.c),
+		-- then we use count (EX_COUNT | EX_RANGE) as opposed
+		-- to range (EX_RANGE)
+		if cmd.range and cmd.count then
+			cmd.range = nil
+		end
+
+		ensure_int(cmd, "range")
+		ensure_int(cmd, "count")
 
 		if cmd.complete ~= nil and cmd.nargs == nil then
 			cmd.nargs = '*'
