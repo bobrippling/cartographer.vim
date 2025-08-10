@@ -141,7 +141,12 @@ local function hook_cmds()
 			function(details)
 				log_timestamp(cmd.script_id, "command", cmd.name)
 
-				-- details.{name,args,fargs,nargs,bang,line1,line2,range,count,reg,mods,smods}
+				-- tack trailing space onto the final arg, to not break
+				-- plugins like `:Tabular / `
+				local trailing_space = details.args:match("%s+$")
+				if trailing_space then
+					details.fargs[#details.fargs] = details.fargs[#details.fargs] .. trailing_space
+				end
 
 				-- deal with q- and f-<...>
 				local generated_cmd =
