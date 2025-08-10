@@ -141,7 +141,7 @@ local function hook_cmds()
 						{
 							args = details.fargs, -- table
 							--args = details.args, -- string
-							bang = details.bang,
+							bang = (details.bang and details.bang ~= 0) and "!" or "",
 							count = details.count ~= -1 and details.count or nil,
 							line1 = details.line1,
 							line2 = details.line2,
