@@ -65,6 +65,7 @@ local function hook_keymaps()
 			if mapping.silent then
 				plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
 				rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
+				remap = false
 
 				vim.api.nvim_set_keymap(
 					mapping.mode,
@@ -72,8 +73,7 @@ local function hook_keymaps()
 					mapping.rhs,
 					{
 						silent = true,
-
-						noremap = not nil_or_zero(mapping.noremap),
+						noremap = not remap,
 						expr = not nil_or_zero(mapping.expr),
 						nowait = not nil_or_zero(mapping.nowait),
 						script = not nil_or_zero(mapping.script),
