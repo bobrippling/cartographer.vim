@@ -60,9 +60,11 @@ local function hook_keymaps()
 
 			log_hooked(mapping.sid, "mapping", mapping.lhs)
 
+			local rhs_desc = mapping.rhs
 			local plug_mapping
 			if mapping.silent then
 				plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
+				rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
 
 				vim.api.nvim_set_keymap(
 					mapping.mode,
@@ -93,7 +95,7 @@ local function hook_keymaps()
 					--buffer = mapping.buffer, TODO
 
 					desc =
-						"cartographer: " .. mapping.lhs .. " -> " .. mapping.rhs ..
+						"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
 						" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 					callback = function()
