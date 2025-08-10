@@ -56,6 +56,25 @@ local function hook_keymaps()
 
 			log_hooked(mapping.sid, "mapping", mapping.lhs)
 
+			local plug_mapping
+			if mapping.silent then
+				plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
+
+				vim.api.nvim_set_keymap(
+					mapping.mode,
+					plug_mapping,
+					mapping.rhs,
+					{
+						silent = true,
+
+						noremap = not nil_or_zero(mapping.noremap),
+						expr = not nil_or_zero(mapping.expr),
+						nowait = not nil_or_zero(mapping.nowait),
+						script = not nil_or_zero(mapping.script),
+					}
+				)
+			end
+
 			vim.api.nvim_set_keymap(
 				mapping.mode,
 				mapping.lhs,
@@ -77,16 +96,15 @@ local function hook_keymaps()
 						log_timestamp(mapping.sid, "mapping", mapping.lhs)
 
 						local out
-						if not nil_or_zero(mapping.expr) then
+						if plug_mapping then
+							out = vim.api.nvim_replace_termcodes(plug_mapping, true, true, true)
+						elseif not nil_or_zero(mapping.expr) then
 							out = vim.fn.eval(mapping.rhs)
 						else
 							-- replace <lt>, which is what vim stores in mappings
 							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, true, true)
 						end
 
-						-- FIXME: this doesn't respect <silent>
-						-- - Use vim.cmd("silent ...") or nvim_cmd({ ..., silent = true }).
-						-- - Or feed keys that trigger a separately defined <silent> mapping.
 						vim.api.nvim_feedkeys(out, remap, false)
 					end,
 				}
