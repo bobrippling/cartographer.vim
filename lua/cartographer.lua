@@ -190,7 +190,7 @@ local function hook_cmds()
 				count = cmd.count,
 				keepscript = cmd.keepscript,
 				nargs = cmd.nargs,
-				--preview = cmd.preview, -- FIXME: boolean comes through???
+				--preview = cmd.preview, -- we only get a boolean, not the preview function (lua or vimscript)
 				range = cmd.range,
 				register = cmd.register,
 
