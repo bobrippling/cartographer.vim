@@ -26,6 +26,7 @@ end
 M.check = function()
 	local C = require("cartographer")
 	local script_summary = C.usage_summary()
+	local OLD = os.time() - 60 * 60 * 24 * 28
 
 	local earliest, latest = stats(script_summary)
 	if earliest then
@@ -37,6 +38,7 @@ M.check = function()
 	for fname, types in pairs(script_summary) do
 		local used = {}
 		local no_uses = {}
+		local old_uses = {}
 
 		vim.health.start(("Script %s:"):format(fname))
 
@@ -48,8 +50,26 @@ M.check = function()
 				if summary.uses == 0 then
 					table.insert(no_uses, ("Unused %s: %q"):format(ty, name))
 				else
+					local tbl
+					local old_warn = ""
+					if summary.latest < OLD then
+						tbl = old_uses
+						old_warn = ", last used > a month ago"
+					else
+						tbl = used
+					end
+
 					local latest_str = os.date("%Y-%m-%d %H:%M:%S", summary.latest)
-					table.insert(used, ("%s: %q: used %d times (latest %s)"):format(ty, name, summary.uses, latest_str))
+					table.insert(
+						tbl,
+						("%s: %q: used %d times (latest %s%s)"):format(
+							ty,
+							name,
+							summary.uses,
+							latest_str,
+							old_warn
+						)
+					)
 					uses = uses + 1
 				end
 				total = total + 1
@@ -65,6 +85,9 @@ M.check = function()
 		end
 
 		for _, ent in pairs(no_uses) do
+			vim.health.warn(ent)
+		end
+		for _, ent in pairs(old_uses) do
 			vim.health.warn(ent)
 		end
 		for _, ent in pairs(used) do
