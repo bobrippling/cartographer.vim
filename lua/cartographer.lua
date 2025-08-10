@@ -17,6 +17,7 @@ local load_table
 local fname_to_sid
 local emit_err
 local nil_or_zero
+local can_remap_mode
 
 local scriptlog = {} --[[
 	{
@@ -53,7 +54,7 @@ local function hook_keymaps()
 		local is_plug = mapping.lhs:match("^<Plug>")
 
 		if mapping.rhs ~= nil
-			and mapping.mode:gsub("%s+", ""):len() > 0
+			and can_remap_mode(mapping.mode)
 			and not is_plug
 		then
 			local scriptpath = scriptname(mapping.sid, true)
@@ -121,6 +122,16 @@ local function hook_keymaps()
 			)
 		end
 	end
+end
+
+function can_remap_mode(mode)
+	mode = mode:gsub("%s+", "")
+
+	if mode:len() == 0 then
+		return false
+	end
+
+	return true
 end
 
 local function ensure_int(d, key)
