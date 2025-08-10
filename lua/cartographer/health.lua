@@ -39,7 +39,7 @@ M.check = function()
 
 		vim.health.start(("Script %s:"):format(fname))
 
-		for ty, ents in pairs(types) do -- mappings/commands
+		for ty, ents in pairs(types) do -- mapping/command
 			local total = 0
 			local uses = 0
 
@@ -58,7 +58,7 @@ M.check = function()
 			else
 				fn = vim.health.info
 			end
-			fn(("%.0f%% of %s used (%d / %d)"):format(uses / total * 100, ty, uses, total))
+			fn(("%.0f%% of %ss used (%d / %d)"):format(uses / total * 100, ty, uses, total))
 		end
 
 		for _, ent in pairs(no_uses) do

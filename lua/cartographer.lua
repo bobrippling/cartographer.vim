@@ -20,10 +20,10 @@ local emit_err
 local scriptlog = {} --[[
 	{
 		[sid] = {
-			commands = {
+			command = {
 				[name] = Timestamps
 			},
-			mappings = {
+			mapping = {
 				[lhs] = Timestamps
 			}
 		}
@@ -38,8 +38,8 @@ local scriptlog = {} --[[
 local hooked = {} --[[
 	{
 		[sid] = {
-			commands = { [name] = true },
-			mappings = { [lhs] = true },
+			command = { [name] = true },
+			mapping = { [lhs] = true },
 		}
 	}
 ]]
@@ -53,7 +53,7 @@ local function hook_keymaps()
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
 			local scriptpath = scriptname(mapping.sid, true)
 
-			log_hooked(mapping.sid, "mappings", mapping.lhs)
+			log_hooked(mapping.sid, "mapping", mapping.lhs)
 
 			vim.api.nvim_set_keymap(
 				mapping.mode,
@@ -73,7 +73,7 @@ local function hook_keymaps()
 						" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 					callback = function()
-						log_timestamp(mapping.sid, "mappings", mapping.lhs)
+						log_timestamp(mapping.sid, "mapping", mapping.lhs)
 
 						local out
 						if mapping.expr and mapping.expr ~= 0 then
@@ -125,12 +125,12 @@ local function hook_cmds()
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 
-		log_hooked(cmd.script_id, "commands", cmd.name)
+		log_hooked(cmd.script_id, "command", cmd.name)
 
 		vim.api.nvim_create_user_command(
 			cmd.name,
 			function(details)
-				log_timestamp(cmd.script_id, "commands", cmd.name)
+				log_timestamp(cmd.script_id, "command", cmd.name)
 
 				-- details.{name,args,fargs,nargs,bang,line1,line2,range,count,reg,mods,smods}
 
@@ -399,8 +399,8 @@ end
 function M.usage_summary()
 	local summary = {} --[[
 		{ [fname] = {
-		  mappings = { [lhs] = { uses } } -- including 0 uses
-		  commands = { [cmd] = { uses } }
+			mapping = { [lhs] = { uses } } -- including 0 uses
+			command = { [cmd] = { uses } }
 		}}
 	]]
 
