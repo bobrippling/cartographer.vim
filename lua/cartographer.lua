@@ -128,11 +128,13 @@ local function hook_cmds()
 		ensure_int(cmd, "range")
 		ensure_int(cmd, "count")
 
-		if cmd.complete ~= nil and cmd.nargs == nil then
-			cmd.nargs = '*'
-		end
-		if cmd.complete ~= nil and cmd.complete:match("^custom") then
-			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
+		if cmd.complete ~= nil then
+			if cmd.nargs == nil then
+				cmd.nargs = '*'
+			end
+			if cmd.complete:match("^custom") then
+				cmd.complete = cmd.complete .. "," .. cmd.complete_arg
+			end
 		end
 
 		log_hooked(cmd.script_id, "command", cmd.name)
@@ -184,7 +186,7 @@ local function hook_cmds()
 				bang = cmd.bang,
 				bar = cmd.bar,
 				complete = cmd.complete,
-				--complete_arg = cmd.complete_arg, -- bundled as part of cmd
+				--complete_arg = cmd.complete_arg, -- bundled as part of cmd.complete
 				count = cmd.count,
 				keepscript = cmd.keepscript,
 				nargs = cmd.nargs,
