@@ -8,6 +8,7 @@ DIR_LOG = nil
 local replace_placeholders
 local scriptname
 local log_timestamp
+local log_entry
 local log_create
 local log_hooked
 local serialize_table
@@ -34,7 +35,14 @@ local scriptlog = {} --[[
 		uses = number
 	}
 ]]
-local hooked = {} -- { [sid] = true }
+local hooked = {} --[[
+	{
+		[sid] = {
+			commands = { [name] = true },
+			mappings = { [lhs] = true },
+		}
+	}
+]]
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
@@ -45,7 +53,7 @@ local function hook_keymaps()
 		if mapping.rhs ~= nil and mapping.mode:gsub("%s+", ""):len() > 0 then
 			local scriptpath = scriptname(mapping.sid, true)
 
-			log_hooked(mapping.sid)
+			log_hooked(mapping.sid, "mappings", mapping.lhs)
 
 			vim.api.nvim_set_keymap(
 				mapping.mode,
@@ -117,7 +125,7 @@ local function hook_cmds()
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 
-		log_hooked(cmd.script_id)
+		log_hooked(cmd.script_id, "commands", cmd.name)
 
 		vim.api.nvim_create_user_command(
 			cmd.name,
@@ -220,25 +228,31 @@ function scriptname(sid, default)
 	return default and "<builtin?>" or nil
 end
 
-function log_hooked(sid)
-	hooked[sid] = true
-end
-
-function log_create(sid, ty, entry)
-	local log = scriptlog[sid]
+function log_entry(map, sid, ty)
+	local log = map[sid]
 	if not log then
 		log = {}
-		scriptlog[sid] = log
+		map[sid] = log
 	end
 	local t = log[ty]
 	if not t then
 		t = {}
 		log[ty] = t
 	end
-	local ent = t[entry]
+	return t
+end
+
+function log_hooked(sid, type, desc)
+	local entry = log_entry(hooked, sid, type)
+	entry[desc] = true
+end
+
+function log_create(sid, ty, desc)
+	local entry = log_entry(scriptlog, sid, ty)
+	local ent = entry[desc]
 	if not ent then
 		ent = { uses = 0 }
-		t[entry] = ent
+		entry[desc] = ent
 	end
 	return ent
 end
