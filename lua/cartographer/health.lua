@@ -35,6 +35,7 @@ M.check = function()
 	end
 
 	for fname, types in pairs(script_summary) do
+		local used = {}
 		local no_uses = {}
 
 		vim.health.start(("Script %s:"):format(fname))
@@ -47,6 +48,8 @@ M.check = function()
 				if summary.uses == 0 then
 					table.insert(no_uses, ("Unused %s: %q"):format(ty, name))
 				else
+					local latest_str = os.date("%Y-%m-%d %H:%M:%S", summary.latest)
+					table.insert(used, ("%s: %q: used %d times (latest %s)"):format(ty, name, summary.uses, latest_str))
 					uses = uses + 1
 				end
 				total = total + 1
@@ -63,6 +66,9 @@ M.check = function()
 
 		for _, ent in pairs(no_uses) do
 			vim.health.warn(ent)
+		end
+		for _, ent in pairs(used) do
+			vim.health.info(ent)
 		end
 	end
 end
