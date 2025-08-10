@@ -16,6 +16,7 @@ local save_table
 local load_table
 local fname_to_sid
 local emit_err
+local nil_or_zero
 
 local scriptlog = {} --[[
 	{
@@ -61,10 +62,10 @@ local function hook_keymaps()
 				"", --mapping.rhs, -- ignored
 				{
 					noremap = mapping.noremap,
-					expr = mapping.expr ~= 0,
-					nowait = mapping.nowait ~= 0,
-					script = mapping.script ~= 0,
-					silent = mapping.silent ~= 0,
+					expr = not nil_or_zero(mapping.expr),
+					nowait = not nil_or_zero(mapping.nowait),
+					script = not nil_or_zero(mapping.script),
+					silent = not nil_or_zero(mapping.silent),
 					--abbr = mapping.abbr,
 					--buffer = mapping.buffer, TODO
 
@@ -76,7 +77,7 @@ local function hook_keymaps()
 						log_timestamp(mapping.sid, "mapping", mapping.lhs)
 
 						local out
-						if mapping.expr and mapping.expr ~= 0 then
+						if not nil_or_zero(mapping.expr) then
 							out = vim.fn.eval(mapping.rhs)
 						else
 							-- replace <lt>, which is what vim stores in mappings
@@ -158,7 +159,7 @@ local function hook_cmds()
 						{
 							args = details.fargs, -- table
 							--args = details.args, -- string
-							bang = (details.bang and details.bang ~= 0) and "!" or "",
+							bang = not nil_or_zero(details.bang) and "!" or "",
 							count = details.count ~= -1 and details.count or nil,
 							line1 = details.line1,
 							line2 = details.line2,
@@ -334,6 +335,10 @@ function emit_err(msg) -- can't handle single quotes
 	vim.cmd.echohl("Error")
 	vim.cmd.echo(("'%s'"):format(msg))
 	vim.cmd.echohl("None")
+end
+
+function nil_or_zero(x)
+	return x == nil or x == 0
 end
 
 function M.install()
