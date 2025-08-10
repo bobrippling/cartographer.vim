@@ -79,7 +79,8 @@ local function hook_keymaps()
 						if mapping.expr and mapping.expr ~= 0 then
 							out = vim.fn.eval(mapping.rhs)
 						else
-							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, false, true)
+							-- replace <lt>, which is what vim stores in mappings
+							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, true, true)
 						end
 
 						-- FIXME: this doesn't respect <silent>
