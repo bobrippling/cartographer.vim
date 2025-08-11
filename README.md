@@ -1,15 +1,18 @@
-Cartographer.vim
-----------
+# Cartographer.vim
 
-Hook `:command`s and `:map`s to gather statistics on use, to help trim down a `.vimrc`
+Hook `:command`s and `:map`s to gather statistics on use, to help trim down a `.vimrc` and co.
 
-Currently WIP
+## Installation
 
-Problems:
+```vim
+Plug 'bobrippling/cartographer.vim'
+```
 
-- [x] Hook commands
-	- [x] Replacing `command Xyz call s:xyz()` // can't call into s:...
-		- Fixed with s:script_fns
-	- [x] Replacing `<q-mods>` // doesn't seem to be replaced at this point
-		- Works with the new dispatch technique (keeping <q-mods> inside the :command)
-- [ ] Hook mappings
+Or via your favourite package manager
+
+## Usage
+
+All your user-commands and mappings will be seamlessly hooked by cartographer and statistics on their use will be gathered.
+A short summary of used scripts can be viewed with `:CartographerLog`. Pass `!` to view unused scripts.
+
+For a more detailed summary, Cartographer uses Neovim's `:checkhealth` to display unused commands and mappings. These are shown as warnings and used mappings have their usage count shown, along with the time of their first and last use. An error is shown if no mappings or no commands in a script are used.

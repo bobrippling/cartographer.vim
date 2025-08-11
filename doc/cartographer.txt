@@ -1,0 +1,40 @@
+*cartographer.txt*  A plugin usage tracker for Neovim
+
+Author:  Rob Pilling <https://github.com/bobrippling>
+License: Same terms as Vim itself.
+
+INTRODUCTION                                    *cartographer*
+
+Does your vimrc and associated list of plugins keep growing and growing?
+Recently stumbled across that neat plugin you installed years ago and have used
+once? Or the one you wrote and never used?
+
+Welcome to my world. Cartographer tracks commands and mappings these plugins
+install and can tell you which are unused, along with any entire scripts that
+are unused.
+
+COMMANDS                                        *cartographer-commands*
+
+                                                *:CartographerLog*
+:CartographerLog[!]     Display a short summary of used scripts. Pass `!` to
+                        view unused scripts.
+
+HEALTH
+
+Cartographer installs a |health| check to display details on used
+commands and mappings (first and last use time, number of uses) and
+scripts with unused commands, mappings or both (these are shown as
+warnings).
+
+STORAGE                                         *cartographer-storage*
+
+Cartographer stores its statistics in `$XDG_STATE_HOME/cartographer.log`, and
+will merge with any changes made to this by other instances of nvim.
+
+ABOUT                                           *cartographer-about*
+
+Grab the latest version or report a bug on GitHub:
+
+https://github.com/bobrippling/cartographer.vim
+
+ vim:tw=78:et:ft=help:norl:
