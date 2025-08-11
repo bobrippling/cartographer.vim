@@ -63,7 +63,7 @@ local function hook_keymaps()
 
 			local rhs_desc = mapping.rhs
 			local plug_mapping
-			if mapping.silent then
+			if not nil_or_zero(mapping.silent) then
 				plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
 				rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
 				remap = false
