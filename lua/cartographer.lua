@@ -88,12 +88,14 @@ local function hook_keymaps()
 				"", --mapping.rhs, -- ignored
 				{
 					noremap = mapping.noremap,
-					expr = not nil_or_zero(mapping.expr),
 					nowait = not nil_or_zero(mapping.nowait),
 					script = not nil_or_zero(mapping.script),
 					silent = not nil_or_zero(mapping.silent),
 					--abbr = mapping.abbr,
 					--buffer = mapping.buffer, TODO
+
+					expr = true, -- this allows us to return a string from `callback`
+					replace_keycodes = true,
 
 					desc =
 						"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
@@ -104,19 +106,15 @@ local function hook_keymaps()
 
 						local out
 						if plug_mapping then
-							out = vim.api.nvim_replace_termcodes(plug_mapping, true, true, true)
+							out = plug_mapping
 						elseif not nil_or_zero(mapping.expr) then
 							out = vim.fn.eval(mapping.rhs)
 						else
 							-- replace <lt>, which is what vim stores in mappings
-							out = vim.api.nvim_replace_termcodes(mapping.rhs, true, true, true)
+							out = mapping.rhs
 						end
 
-						vim.api.nvim_feedkeys(
-							out,
-							remap and "" or "n",
-							false -- escape K_SPECIAL
-						)
+						return out
 					end,
 				}
 			)
