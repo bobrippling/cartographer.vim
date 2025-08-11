@@ -139,7 +139,7 @@ local function ensure_int(d, key)
 end
 
 local function hook_cmds()
-	local cmds = vim.api.nvim_get_commands({})
+	local cmds = vim.api.nvim_get_commands {}
 
 	table.sort(cmds)
 	for i, cmd in pairs(cmds) do
@@ -276,7 +276,7 @@ end
 
 function scriptname(sid, default)
 	if sid > 0 then
-		return vim.fn.getscriptinfo({ sid = sid })[1].name
+		return vim.fn.getscriptinfo { sid = sid }[1].name
 	end
 	return default and "<builtin?>" or nil
 end
@@ -358,7 +358,7 @@ function load_table(filename)
 end
 
 function fname_to_sid(fname)
-	local info = vim.fn.getscriptinfo({ name = "^" .. fname .. "$" }) -- not perfect
+	local info = vim.fn.getscriptinfo { name = "^" .. fname .. "$" } -- not perfect
 	for _, script in pairs(info) do
 		if script.name == fname then
 			return script.sid
