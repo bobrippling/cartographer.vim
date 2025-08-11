@@ -321,28 +321,12 @@ function log_timestamp(sid, ty, entry)
 	ent.uses = ent.uses + 1
 end
 
-function serialize_table(tbl)
-	local result = {}
-	for k, v in pairs(tbl) do
-		if type(k) == "string" then
-			k = ("%q"):format(k)
-		end
-		if type(v) == "table" then
-			v = serialize_table(v)
-		elseif type(v) == "string" then
-			v = ("%q"):format(v)
-		end
-		table.insert(result, string.format("[%s] = %s", k, v))
-	end
-	return "{" .. table.concat(result, ", ") .. "}"
-end
-
 function save_table(tbl, filename)
 	local file = io.open(filename, "w")
 	if not file then
 		return false
 	end
-	file:write("return " .. serialize_table(tbl) .. "\n")
+	file:write(vim.json.encode(tbl))
 	file:close()
 	return true
 end
@@ -354,7 +338,7 @@ function load_table(filename)
 	end
 	local content = file:read("*a")
 	file:close()
-	return load(content)()
+	return vim.json.decode(content)
 end
 
 function fname_to_sid(fname)
