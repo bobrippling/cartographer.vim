@@ -95,7 +95,11 @@ local function hook_keymaps()
 					--buffer = mapping.buffer, TODO
 
 					expr = true, -- this allows us to return a string from `callback`
-					replace_keycodes = true,
+
+					-- we don't want vim to replace_keycodes for mappings which were originally <expr>,
+					-- because that'll have already passed back things like "\<Left>", etc.
+					-- So we only do this for non-<expr> mappings
+					replace_keycodes = nil_or_zero(mapping.expr),
 
 					desc =
 						"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
