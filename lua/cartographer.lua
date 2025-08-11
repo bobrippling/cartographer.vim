@@ -123,18 +123,7 @@ local function hook_keymaps()
 end
 
 function can_remap_mode(mode)
-	mode = mode:gsub("%s+", "")
-
-	if mode:len() == 0 then
-		return false
-	end
-
-	if mode:match("o") then
-		-- can't remap operator-pending at the moment, not sure why
-		return false
-	end
-
-	return true
+	return mode:gsub("%s+", ""):len() > 0
 end
 
 local function ensure_int(d, key)
