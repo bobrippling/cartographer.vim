@@ -400,6 +400,63 @@ function M.exit()
 		end
 	end
 
+	local existing = load_table(FNAME_LOG)
+	if existing then
+		-- uses += uses_this_session
+		-- latest <-- max()
+		-- earliest <-- min()
+
+		for fname_this, types_this in pairs(log_with_scriptnames) do
+			for ty_this, entries_this in pairs(types_this) do
+				for entry_this, stats_this in pairs(entries_this) do
+					if existing[fname_this] then
+						if existing[fname_this][ty_this] then
+							local stats_existing = existing[fname_this]
+								and existing[fname_this][ty_this]
+								and existing[fname_this][ty_this][entry_this]
+
+							if stats_existing then
+								stats_existing.uses = stats_existing.uses + (stats_this.uses_this_session or 0)
+
+								if stats_this.latest > stats_existing.latest then
+									stats_existing.latest = stats_this.latest
+								end
+								if stats_this.earliest < stats_existing.earliest then
+									stats_existing.earliest = stats_this.earliest
+								end
+							else
+								-- no entry for specific mapping/command - create
+								-- .uses_this_session is filtered out later
+								existing[fname_this][ty_this][entry_this] = stats_this
+							end
+						else
+							-- no entry for mappings/commands - create
+							existing[fname_this][ty_this] = entries_this
+						end
+					else
+						-- no entry for this script - create
+						existing[fname_this] = types_this
+					end
+				end
+			end
+		end
+
+		log_with_scriptnames = existing
+	end
+
+	-- filter out .uses_this_session (and anything else)
+	for fname, types in pairs(log_with_scriptnames) do
+		for ty, entries in pairs(types) do
+			for entry, stats in pairs(entries) do
+				log_with_scriptnames[fname][ty][entry] = {
+					uses = stats.uses,
+					latest = stats.latest,
+					earliest = stats.earliest,
+				}
+			end
+		end
+	end
+
 	save_table(log_with_scriptnames, FNAME_LOG)
 end
 
