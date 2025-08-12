@@ -35,6 +35,7 @@ local scriptlog = {} --[[
 		earliest = <timestamp>
 		latest = <timestamp>
 		uses = number
+		uses_this_session = number | nil
 	}
 ]]
 local hooked = {} --[[
@@ -304,7 +305,7 @@ function log_create(sid, ty, desc)
 	local entry = log_entry(scriptlog, sid, ty)
 	local ent = entry[desc]
 	if not ent then
-		ent = { uses = 0 }
+		ent = { uses = 0 } -- we don't set uses_this_session here, leave it as nil
 		entry[desc] = ent
 	end
 	return ent
@@ -319,6 +320,7 @@ function log_timestamp(sid, ty, entry)
 	end
 	ent.latest = now
 	ent.uses = ent.uses + 1
+	ent.uses_this_session = (ent.uses_this_session or 0) + 1
 end
 
 function save_table(tbl, filename)
