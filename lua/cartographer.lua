@@ -368,16 +368,16 @@ function M.install()
 	local rejects = {}
 	local got_reject = false
 
-	for fname, ents in pairs(log_with_scriptnames) do
+	for fname, types in pairs(log_with_scriptnames) do
 		local sid = fname_to_sid(fname)
 		if sid then
 			if vim.o.verbose >= 1 then
 				print(("Cartographer: resolved fname %q to SID %d"):format(fname, sid))
 			end
-			scriptlog[sid] = ents
+			scriptlog[sid] = types
 		else
 			emit_err(("Cartographer: no <SID> for filename %q"):format(fname))
-			rejects[fname] = ents
+			rejects[fname] = types
 			got_reject = true
 		end
 	end
@@ -391,10 +391,10 @@ end
 function M.exit()
 	local log_with_scriptnames = {}
 
-	for sid, ents in pairs(scriptlog) do
+	for sid, types in pairs(scriptlog) do
 		local fname = scriptname(sid, false)
 		if fname then
-			log_with_scriptnames[fname] = ents
+			log_with_scriptnames[fname] = types
 		end
 	end
 
@@ -406,14 +406,14 @@ function M.show_log(q_bang)
 		local latest, earliest
 		local uses = 0
 
-		for _, ty in pairs(types) do
-			for _, ts in pairs(ty) do
-				uses = uses + ts.uses
-				if latest == nil or ts.latest > latest then
-					latest = ts.latest
+		for _ty, entries in pairs(types) do
+			for _entry, stat in pairs(entries) do
+				uses = uses + stat.uses
+				if latest == nil or stat.latest > latest then
+					latest = stat.latest
 				end
-				if earliest == nil or ts.earliest < earliest then
-					earliest = ts.earliest
+				if earliest == nil or stat.earliest < earliest then
+					earliest = stat.earliest
 				end
 			end
 		end
@@ -425,7 +425,7 @@ function M.show_log(q_bang)
 	end
 
 	if q_bang:len() > 0 then
-		for sid, ent in pairs(hooked) do
+		for sid, _types in pairs(hooked) do
 			if not scriptlog[sid] then
 				local fname = scriptname(sid, false)
 
@@ -452,25 +452,25 @@ function M.usage_summary()
 			summary[fname] = {}
 
 			for ty, hook_entries in pairs(hooked_types) do
-				for name, details in pairs(hook_entries) do
-					local ent = scriptlog[sid]
+				for entry, _true in pairs(hook_entries) do
+					local stat = scriptlog[sid]
 						and scriptlog[sid][ty]
-						and scriptlog[sid][ty][name]
+						and scriptlog[sid][ty][entry]
 
 					local uses = 0
 					local earliest, latest
 
-					if ent then
-						uses = ent.uses or 0
-						earliest = ent.earliest
-						latest = ent.latest
+					if stat then
+						uses = stat.uses or 0
+						earliest = stat.earliest
+						latest = stat.latest
 					end
 
 					if not summary[fname][ty] then
 						summary[fname][ty] = {}
 					end
 
-					summary[fname][ty][name] = {
+					summary[fname][ty][entry] = {
 						uses = uses,
 						earliest = earliest,
 						latest = latest,
