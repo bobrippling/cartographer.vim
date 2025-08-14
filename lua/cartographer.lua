@@ -18,6 +18,8 @@ local fname_to_sid
 local emit_err
 local nil_or_zero
 local can_remap_mode
+local hook_cmd
+local hook_keymap
 
 local scriptlog = {} --[[
 	{
@@ -52,81 +54,87 @@ local save = true
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
-	for i, mapping in pairs(keymap) do
-		local remap = nil_or_zero(mapping.noremap)
-		local is_plug = mapping.lhs:match("^<Plug>")
-
-		if mapping.rhs ~= nil
-			and can_remap_mode(mapping.mode)
-			and not is_plug
-		then
-			local scriptpath = scriptname(mapping.sid, true)
-
-			log_hooked(mapping.sid, "mapping", mapping.lhs)
-
-			local rhs_desc = mapping.rhs
-			local plug_mapping
-			if not nil_or_zero(mapping.silent) then
-				plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
-				rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
-				remap = false
-
-				vim.api.nvim_set_keymap(
-					mapping.mode,
-					plug_mapping,
-					mapping.rhs,
-					{
-						silent = true,
-						noremap = not remap,
-						expr = not nil_or_zero(mapping.expr),
-						nowait = not nil_or_zero(mapping.nowait),
-						script = not nil_or_zero(mapping.script),
-					}
-				)
-			end
-
-			vim.api.nvim_set_keymap(
-				mapping.mode,
-				mapping.lhs,
-				"", --mapping.rhs, -- ignored
-				{
-					noremap = mapping.noremap,
-					nowait = not nil_or_zero(mapping.nowait),
-					script = not nil_or_zero(mapping.script),
-					silent = not nil_or_zero(mapping.silent),
-					--abbr = mapping.abbr,
-					--buffer = mapping.buffer, TODO
-
-					expr = true, -- this allows us to return a string from `callback`
-
-					-- we don't want vim to replace_keycodes for mappings which were originally <expr>,
-					-- because that'll have already passed back things like "\<Left>", etc.
-					-- So we only do this for non-<expr> mappings
-					replace_keycodes = nil_or_zero(mapping.expr),
-
-					desc =
-						"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
-						" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
-
-					callback = function()
-						log_timestamp(mapping.sid, "mapping", mapping.lhs)
-
-						local out
-						if plug_mapping then
-							out = plug_mapping
-						elseif not nil_or_zero(mapping.expr) then
-							out = vim.fn.eval(mapping.rhs)
-						else
-							-- replace <lt>, which is what vim stores in mappings
-							out = mapping.rhs
-						end
-
-						return out
-					end,
-				}
-			)
-		end
+	for _, mapping in pairs(keymap) do
+		hook_keymap(mapping)
 	end
+end
+
+function hook_keymap(mapping)
+	local remap = nil_or_zero(mapping.noremap)
+	local is_plug = mapping.lhs:match("^<Plug>")
+
+	if mapping.rhs == nil
+		or not can_remap_mode(mapping.mode)
+		or is_plug
+	then
+		return
+	end
+
+	local scriptpath = scriptname(mapping.sid, true)
+
+	log_hooked(mapping.sid, "mapping", mapping.lhs)
+
+	local rhs_desc = mapping.rhs
+	local plug_mapping
+	if not nil_or_zero(mapping.silent) then
+		plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
+		rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
+		remap = false
+
+		vim.api.nvim_set_keymap(
+			mapping.mode,
+			plug_mapping,
+			mapping.rhs,
+			{
+				silent = true,
+				noremap = not remap,
+				expr = not nil_or_zero(mapping.expr),
+				nowait = not nil_or_zero(mapping.nowait),
+				script = not nil_or_zero(mapping.script),
+			}
+		)
+	end
+
+	vim.api.nvim_set_keymap(
+		mapping.mode,
+		mapping.lhs,
+		"", --mapping.rhs, -- ignored
+		{
+			noremap = mapping.noremap,
+			nowait = not nil_or_zero(mapping.nowait),
+			script = not nil_or_zero(mapping.script),
+			silent = not nil_or_zero(mapping.silent),
+			--abbr = mapping.abbr,
+			--buffer = mapping.buffer, TODO
+
+			expr = true, -- this allows us to return a string from `callback`
+
+			-- we don't want vim to replace_keycodes for mappings which were originally <expr>,
+			-- because that'll have already passed back things like "\<Left>", etc.
+			-- So we only do this for non-<expr> mappings
+			replace_keycodes = nil_or_zero(mapping.expr),
+
+			desc =
+				"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
+				" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
+
+			callback = function()
+				log_timestamp(mapping.sid, "mapping", mapping.lhs)
+
+				local out
+				if plug_mapping then
+					out = plug_mapping
+				elseif not nil_or_zero(mapping.expr) then
+					out = vim.fn.eval(mapping.rhs)
+				else
+					-- replace <lt>, which is what vim stores in mappings
+					out = mapping.rhs
+				end
+
+				return out
+			end,
+		}
+	)
 end
 
 function can_remap_mode(mode)
@@ -145,101 +153,105 @@ local function hook_cmds()
 	local cmds = vim.api.nvim_get_commands {}
 
 	table.sort(cmds)
-	for i, cmd in pairs(cmds) do
-		-- TODO: handle cmd.buffer
-
-		if cmd.nargs:match("^[01]$") ~= nil then
-			cmd.nargs = tonumber(cmd.nargs)
-		end
-
-		-- convert in to out
-		if cmd.range == "." then
-			cmd.range = true
-		end
-
-		-- if there is count and range (from nvim:api/command.c),
-		-- then we use count (EX_COUNT | EX_RANGE) as opposed
-		-- to range (EX_RANGE)
-		if cmd.range and cmd.count then
-			cmd.range = nil
-		end
-
-		ensure_int(cmd, "range")
-		ensure_int(cmd, "count")
-
-		if cmd.complete ~= nil then
-			if cmd.nargs == nil then
-				cmd.nargs = '*'
-			end
-			if cmd.complete:match("^custom") then
-				cmd.complete = cmd.complete .. "," .. cmd.complete_arg
-			end
-		end
-
-		log_hooked(cmd.script_id, "command", cmd.name)
-
-		vim.api.nvim_create_user_command(
-			cmd.name,
-			function(details)
-				log_timestamp(cmd.script_id, "command", cmd.name)
-
-				-- tack trailing space onto the final arg, to not break
-				-- plugins like `:Tabular / `
-				local trailing_space = details.args:match("%s+$")
-				if trailing_space then
-					details.fargs[#details.fargs] = details.fargs[#details.fargs] .. trailing_space
-				end
-
-				-- deal with q- and f-<...>
-				local generated_cmd =
-					replace_placeholders(
-						cmd.definition,
-						{
-							args = details.fargs, -- table
-							--args = details.args, -- string
-							bang = details.bang and "!" or "",
-							count = details.count ~= -1 and details.count or 0,
-							line1 = details.line1,
-							line2 = details.line2,
-							range = details.range,
-							reg = details.reg,
-							register = details.reg,
-							mods = details.mods, -- smods: {}, mods: string
-							lt = "<", -- <lt> -> literal
-						}
-					)
-					:gsub(
-						"%f[%a]s:",
-						function(key)
-							return ("<SNR>%d_"):format(cmd.script_id)
-						end
-					)
-
-				vim.cmd(generated_cmd)
-			end,
-			{
-				force = true,
-
-				-- true/1 and false/0 are interchangeable here
-				addr = cmd.addr,
-				bang = cmd.bang,
-				bar = cmd.bar,
-				complete = cmd.complete,
-				--complete_arg = cmd.complete_arg, -- bundled as part of cmd.complete
-				count = cmd.count,
-				keepscript = cmd.keepscript,
-				nargs = cmd.nargs,
-				--preview = cmd.preview, -- we only get a boolean, not the preview function (lua or vimscript)
-				range = cmd.range,
-				register = cmd.register,
-
-				desc =
-					"cartographer: " .. cmd.name .. " -> " .. cmd.definition ..
-					" (" .. "Last set from " .. scriptname(cmd.script_id, true) .. ")",
-
-			}
-		)
+	for _, cmd in pairs(cmds) do
+		hook_cmd(cmd)
 	end
+end
+
+function hook_cmd(cmd)
+	-- TODO: handle cmd.buffer
+
+	if cmd.nargs:match("^[01]$") ~= nil then
+		cmd.nargs = tonumber(cmd.nargs)
+	end
+
+	-- convert in to out
+	if cmd.range == "." then
+		cmd.range = true
+	end
+
+	-- if there is count and range (from nvim:api/command.c),
+	-- then we use count (EX_COUNT | EX_RANGE) as opposed
+	-- to range (EX_RANGE)
+	if cmd.range and cmd.count then
+		cmd.range = nil
+	end
+
+	ensure_int(cmd, "range")
+	ensure_int(cmd, "count")
+
+	if cmd.complete ~= nil then
+		if cmd.nargs == nil then
+			cmd.nargs = '*'
+		end
+		if cmd.complete:match("^custom") then
+			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
+		end
+	end
+
+	log_hooked(cmd.script_id, "command", cmd.name)
+
+	vim.api.nvim_create_user_command(
+		cmd.name,
+		function(details)
+			log_timestamp(cmd.script_id, "command", cmd.name)
+
+			-- tack trailing space onto the final arg, to not break
+			-- plugins like `:Tabular / `
+			local trailing_space = details.args:match("%s+$")
+			if trailing_space then
+				details.fargs[#details.fargs] = details.fargs[#details.fargs] .. trailing_space
+			end
+
+			-- deal with q- and f-<...>
+			local generated_cmd =
+				replace_placeholders(
+					cmd.definition,
+					{
+						args = details.fargs, -- table
+						--args = details.args, -- string
+						bang = details.bang and "!" or "",
+						count = details.count ~= -1 and details.count or 0,
+						line1 = details.line1,
+						line2 = details.line2,
+						range = details.range,
+						reg = details.reg,
+						register = details.reg,
+						mods = details.mods, -- smods: {}, mods: string
+						lt = "<", -- <lt> -> literal
+					}
+				)
+				:gsub(
+					"%f[%a]s:",
+					function(key)
+						return ("<SNR>%d_"):format(cmd.script_id)
+					end
+				)
+
+			vim.cmd(generated_cmd)
+		end,
+		{
+			force = true,
+
+			-- true/1 and false/0 are interchangeable here
+			addr = cmd.addr,
+			bang = cmd.bang,
+			bar = cmd.bar,
+			complete = cmd.complete,
+			--complete_arg = cmd.complete_arg, -- bundled as part of cmd.complete
+			count = cmd.count,
+			keepscript = cmd.keepscript,
+			nargs = cmd.nargs,
+			--preview = cmd.preview, -- we only get a boolean, not the preview function (lua or vimscript)
+			range = cmd.range,
+			register = cmd.register,
+
+			desc =
+				"cartographer: " .. cmd.name .. " -> " .. cmd.definition ..
+				" (" .. "Last set from " .. scriptname(cmd.script_id, true) .. ")",
+
+		}
+	)
 end
 
 function replace_placeholders(str, values)
