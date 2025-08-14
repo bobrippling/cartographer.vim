@@ -152,7 +152,6 @@ end
 local function hook_cmds()
 	local cmds = vim.api.nvim_get_commands {}
 
-	table.sort(cmds)
 	for _, cmd in pairs(cmds) do
 		hook_cmd(cmd)
 	end
