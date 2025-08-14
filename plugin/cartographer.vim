@@ -21,6 +21,7 @@ if exists('g:plugs')
 endif
 
 command! -bang -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
+command! -bar CartographerDontSave lua require('cartographer').dont_save()
 
 augroup CartographerExit
 	autocmd!
