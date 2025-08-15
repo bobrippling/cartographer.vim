@@ -582,6 +582,22 @@ function M.dont_save()
 	save = false
 end
 
+function M.uses(type, name)
+	local uses = 0
+	for _, types in pairs(scriptlog) do
+		for ty, entries in pairs(types) do
+			if ty == type then
+				for name_, stat in pairs(entries) do
+					if name_ == name then
+						uses = uses + stat.uses
+					end
+				end
+			end
+		end
+	end
+	return uses
+end
+
 function M.usage_summary()
 	local summary = {} --[[
 		{ [fname] = {
