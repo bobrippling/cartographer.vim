@@ -530,6 +530,54 @@ function M.show_log(q_bang)
 	end
 end
 
+function M.hook(args, q_bang)
+	local function usage()
+		error("usage: hook | hook <type> <name>")
+	end
+	local type, name
+	local bang = q_bang:len() > 0
+
+	if #args == 2 then
+		type, name = unpack(args)
+	elseif #args ~= 0 then
+		usage()
+	end
+
+	if type == nil then
+		hook_keymaps()
+		hook_cmds()
+		return
+	end
+
+	local found = false
+
+	if type == "mapping" then
+		local keymap = vim.api.nvim_get_keymap('')
+
+		for i, mapping in pairs(keymap) do
+			if mapping.lhs == name then
+				hook_keymap(mapping, not bang)
+				found = true
+			end
+		end
+	elseif type == "command" then
+		local cmds = vim.api.nvim_get_commands {}
+
+		for _, cmd in pairs(cmds) do
+			if cmd.name == name then
+				hook_cmd(cmd, not bang)
+				found = true
+			end
+		end
+	else
+		usage()
+	end
+
+	if not found then
+		error(("no %s found for \"%s\""):format(type, name))
+	end
+end
+
 function M.dont_save()
 	save = false
 end
