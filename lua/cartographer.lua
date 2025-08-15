@@ -20,6 +20,7 @@ local nil_or_zero
 local can_remap_mode
 local hook_cmd
 local hook_keymap
+local already_hooked
 
 local scriptlog = {} --[[
 	{
@@ -55,11 +56,22 @@ local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
 	for _, mapping in pairs(keymap) do
-		hook_keymap(mapping)
+		hook_keymap(mapping, false)
 	end
 end
 
-function hook_keymap(mapping)
+function already_hooked(map)
+	return map.desc and map.desc:match("^cartographer: ")
+end
+
+function hook_keymap(mapping, err_if_exists)
+	if already_hooked(mapping, err_if_exists) then
+		if err_if_exists then
+			error(("mapping %s already hooked"):format(mapping.lhs))
+		end
+		return
+	end
+
 	local remap = nil_or_zero(mapping.noremap)
 	local is_plug = mapping.lhs:match("^<Plug>")
 
@@ -153,11 +165,18 @@ local function hook_cmds()
 	local cmds = vim.api.nvim_get_commands {}
 
 	for _, cmd in pairs(cmds) do
-		hook_cmd(cmd)
+		hook_cmd(cmd, false)
 	end
 end
 
-function hook_cmd(cmd)
+function hook_cmd(cmd, err_if_exists)
+	if already_hooked(cmd, err_if_exists) then
+		if err_if_exists then
+			error(("command %s already hooked"):format(cmd.name))
+		end
+		return
+	end
+
 	-- TODO: handle cmd.buffer
 
 	if cmd.nargs:match("^[01]$") ~= nil then
