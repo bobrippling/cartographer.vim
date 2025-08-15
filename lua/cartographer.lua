@@ -598,6 +598,10 @@ function M.uses(type, name)
 	return uses
 end
 
+function M.clear()
+	scriptlog = {}
+end
+
 function M.usage_summary()
 	local summary = {} --[[
 		{ [fname] = {
