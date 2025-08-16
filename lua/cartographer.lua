@@ -584,17 +584,24 @@ end
 
 function M.uses(type, name)
 	local uses = 0
+	local found = false
 	for _, types in pairs(scriptlog) do
 		for ty, entries in pairs(types) do
 			if ty == type then
 				for name_, stat in pairs(entries) do
 					if name_ == name then
 						uses = uses + stat.uses
+						found = true
 					end
 				end
 			end
 		end
 	end
+
+	if not found then
+		error(("no %s for \"%s\""):format(type, name))
+	end
+
 	return uses
 end
 
