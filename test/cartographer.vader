@@ -81,3 +81,20 @@ Execute (attempt to hook it, assert error):
     let caught = 1
   endtry
   Assert caught
+
+Given (a command with a literal '<'):
+  line0
+  line1
+Before:
+  command! -bang WithLt normal<bang> $Cend
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! command WithLt
+Do (run the command):
+  :WithLt\<CR>j:WithLt!\<CR>
+Then (assert command is used):
+  let uses = luaeval('require("cartographer").uses("command", "WithLt")')
+  Assert uses == 2
+Expect (changed text):
+  lineend
+  lineend
