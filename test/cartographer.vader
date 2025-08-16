@@ -1,3 +1,35 @@
+Given (a <expr> mapping with a non-expanded termcode):
+  text
+Before:
+  nnoremap <expr> gs ":<C-U>s/x/s/<CR>"
+  "                    ^ no backslash
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping gs
+Do (trigger the map):
+  gs
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "gs")')
+  Assert uses == 1
+Expect (changed text):
+  test
+
+Given (a <expr> mapping with an expanded termcode):
+  text
+Before:
+  nnoremap <expr> gs ":\<C-U>s/x/s/<CR>"
+  "                    ^
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping gs
+Do (trigger the map):
+  gs
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "gs")')
+  Assert uses == 1
+Expect (changed text):
+  test
+
 Given (an attempt to hook a <Plug> mapping):
   text
 Before:

@@ -127,7 +127,7 @@ function hook_keymap(mapping, err)
 			-- we don't want vim to replace_keycodes for mappings which were originally <expr>,
 			-- because that'll have already passed back things like "\<Left>", etc.
 			-- So we only do this for non-<expr> mappings
-			replace_keycodes = nil_or_zero(mapping.expr),
+			replace_keycodes = plug_mapping ~= nil or nil_or_zero(mapping.expr),
 
 			desc =
 				"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
@@ -140,7 +140,10 @@ function hook_keymap(mapping, err)
 				if plug_mapping then
 					out = plug_mapping
 				elseif not nil_or_zero(mapping.expr) then
+					-- from the above config, vim now replaces termcodes from what we
+					-- return, except for <expr> mappings, which we handle here:
 					out = vim.fn.eval(mapping.rhs)
+					out = vim.api.nvim_replace_termcodes(out, true, true, true)
 				else
 					-- replace <lt>, which is what vim stores in mappings
 					out = mapping.rhs
