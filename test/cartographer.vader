@@ -67,6 +67,26 @@ Expect (changed text):
   
   hello
 
+Given (a <Plug> mapping):
+  text
+# we don't wrap the <Plug> mapping, but we still trigger it via another
+Before:
+  nnoremap <Plug>(aplug) :<C-U>s/x/s/<CR>
+  nnoremap doit <Plug>(aplug)
+  lua require("cartographer").clear()
+  CartographerDontSave
+  " this won't hook:
+  "CartographerHook! mapping <Plug>(aplug)
+  " this will hook:
+  CartographerHook! mapping doit
+Do (trigger the map):
+  doit
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "doit")')
+  Assert uses == 1
+Expect (changed text):
+  test
+
 Given (an attempt to hook a <Plug> mapping):
   text
 Before:
