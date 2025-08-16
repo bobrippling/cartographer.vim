@@ -610,7 +610,22 @@ function M.uses(type, name)
 	end
 
 	if not found then
-		error(("no %s for \"%s\""):format(type, name))
+		local is_hooked = false
+		for _sid, hooked_types in pairs(hooked) do
+			for name_, _true in pairs(hooked_types[type] or {}) do
+				if name_ == name then
+					is_hooked = true
+					goto fin
+				end
+			end
+		end
+		::fin::
+
+		error(("no %s for \"%s\" (%s)"):format(
+			type,
+			name,
+			is_hooked and "hooked but not used" or "not hooked"
+		))
 	end
 
 	return uses
