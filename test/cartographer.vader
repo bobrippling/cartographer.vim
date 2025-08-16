@@ -67,6 +67,25 @@ Expect (changed text):
   
   hello
 
+Given (an operator-pending mapping):
+  text
+  text2
+  text3
+Before:
+  onoremap il :<C-U>normal! v0o$<CR>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping il
+Do (trigger the map):
+  jdil
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "il")')
+  Assert uses == 1
+Expect (changed text):
+  text
+  
+  text3
+
 Given (a <Plug> mapping):
   text
 # we don't wrap the <Plug> mapping, but we still trigger it via another
