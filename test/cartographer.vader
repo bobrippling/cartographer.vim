@@ -1,0 +1,14 @@
+Given (an attempt to hook a <Plug> mapping):
+  text
+Before:
+  nnoremap <Plug>(abc) xyz
+  lua require("cartographer").clear()
+  CartographerDontSave
+Execute (attempt to hook it, assert error):
+  let caught = 0
+  try
+    CartographerHook! mapping <Plug>(abc)
+  catch /can't hook mapping/
+    let caught = 1
+  endtry
+  Assert caught

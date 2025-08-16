@@ -56,7 +56,7 @@ local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
 	for _, mapping in pairs(keymap) do
-		hook_keymap(mapping, false)
+		hook_keymap(mapping, {})
 	end
 end
 
@@ -64,9 +64,9 @@ function already_hooked(map)
 	return map.desc and map.desc:match("^cartographer: ")
 end
 
-function hook_keymap(mapping, err_if_exists)
-	if already_hooked(mapping, err_if_exists) then
-		if err_if_exists then
+function hook_keymap(mapping, err)
+	if already_hooked(mapping) then
+		if err.if_exists then
 			error(("mapping %s already hooked"):format(mapping.lhs))
 		end
 		return
@@ -79,6 +79,9 @@ function hook_keymap(mapping, err_if_exists)
 		or not can_remap_mode(mapping.mode)
 		or is_plug
 	then
+		if err.invalid then
+			error(("can't hook mapping %s"):format(mapping.lhs))
+		end
 		return
 	end
 
@@ -169,9 +172,9 @@ local function hook_cmds()
 	end
 end
 
-function hook_cmd(cmd, err_if_exists)
-	if already_hooked(cmd, err_if_exists) then
-		if err_if_exists then
+function hook_cmd(cmd, err)
+	if already_hooked(cmd) then
+		if err.if_exists then
 			error(("command %s already hooked"):format(cmd.name))
 		end
 		return
@@ -556,7 +559,7 @@ function M.hook(args, q_bang)
 
 		for i, mapping in pairs(keymap) do
 			if mapping.lhs == name then
-				hook_keymap(mapping, not bang)
+				hook_keymap(mapping, { if_exists = not bang, invalid = true })
 				found = true
 			end
 		end
