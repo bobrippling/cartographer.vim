@@ -124,10 +124,12 @@ function hook_keymap(mapping, err)
 
 			expr = true, -- this allows us to return a string from `callback`
 
-			-- we don't want vim to replace_keycodes for mappings which were originally <expr>,
-			-- because that'll have already passed back things like "\<Left>", etc.
-			-- So we only do this for non-<expr> mappings
-			replace_keycodes = plug_mapping ~= nil or nil_or_zero(mapping.expr),
+			-- we need to replace keycodes if:
+			-- - we're using `<Plug>` to perform a `<silent>` map, so we need the `<Plug>` expanding
+			-- - we're wrapping an expr mapping, which might give back "<Left>" instead of "\<Left>"
+			--   > nmap <expr> R "<Left>" behaves as a left-key
+			-- - we're a non-<Plug>, non-<expr> mapping - still replace
+			replace_keycodes = true,
 
 			desc =
 				"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
@@ -140,12 +142,8 @@ function hook_keymap(mapping, err)
 				if plug_mapping then
 					out = plug_mapping
 				elseif not nil_or_zero(mapping.expr) then
-					-- from the above config, vim now replaces termcodes from what we
-					-- return, except for <expr> mappings, which we handle here:
 					out = vim.fn.eval(mapping.rhs)
-					out = vim.api.nvim_replace_termcodes(out, true, true, true)
 				else
-					-- replace <lt>, which is what vim stores in mappings
 					out = mapping.rhs
 				end
 

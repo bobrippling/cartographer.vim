@@ -30,6 +30,21 @@ Then (assert map is used):
 Expect (changed text):
   test
 
+Given (a non-expr mapping with a termcode):
+  text
+Before:
+  nnoremap R <Left>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook mapping R
+Do (trigger the map):
+  $Rihi
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "R")')
+  Assert uses == 1
+Expect (changed text):
+  tehixt
+
 Given (an attempt to hook a <Plug> mapping):
   text
 Before:
