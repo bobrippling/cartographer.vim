@@ -45,6 +45,28 @@ Then (assert map is used):
 Expect (changed text):
   tehixt
 
+Given (a mapping containing <lt>):
+  paragraph
+  entry
+  
+  hello
+Before:
+  nnoremap a< >ip
+  setl et ts=2 sw=0
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping a<lt>
+Do (trigger the map):
+  a<
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "a<lt>")')
+  Assert uses == 1
+Expect (changed text):
+    paragraph
+    entry
+  
+  hello
+
 Given (an attempt to hook a <Plug> mapping):
   text
 Before:

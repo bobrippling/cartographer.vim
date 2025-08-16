@@ -547,6 +547,9 @@ function M.hook(args, q_bang)
 		usage()
 	end
 
+	-- User must do this
+	--name = name:gsub("<", "<lt>")
+
 	if type == nil then
 		hook_keymaps()
 		hook_cmds()
@@ -589,6 +592,10 @@ end
 function M.uses(type, name)
 	local uses = 0
 	local found = false
+
+	-- User must do this
+	--name = name:gsub("<[^>]*<", "<lt>")
+
 	for _, types in pairs(scriptlog) do
 		for ty, entries in pairs(types) do
 			if ty == type then
