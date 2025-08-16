@@ -106,6 +106,22 @@ Then (assert map is used):
 Expect (changed text):
   test
 
+Given (a <silent> mapping):
+  text
+# we install a <Plug> mapping to preserve <silent>, ensure it is triggered
+Before:
+  nnoremap <silent> abc :<C-U>s/x/s/<CR>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping abc
+Do (trigger the map):
+  abc
+Then (assert map is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "abc")')
+  Assert uses == 1
+Expect (changed text):
+  test
+
 Given (an attempt to hook a <Plug> mapping):
   text
 Before:
