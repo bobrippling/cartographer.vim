@@ -1,0 +1,17 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+#jobs:
+#  test:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: dependencies
+#      run: git clone https://github.com/junegunn/vader.vim.git
+#    - name: install nvim
+#      run: sudo apt install neovim
+#    - name: test
+#      run: ./check.sh
