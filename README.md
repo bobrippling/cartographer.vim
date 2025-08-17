@@ -10,6 +10,13 @@ Plug 'bobrippling/cartographer.vim'
 
 Or via your favourite package manager
 
+## tl;dr usage
+
+- Install the plugin
+- Use commands/mappings
+- `:checkhealth cartographer`
+- Delete unused commands/mappings/plugins listed above
+
 ## Usage
 
 All your user-commands and mappings will be seamlessly hooked by cartographer and statistics on their use will be gathered.
