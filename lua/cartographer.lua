@@ -129,7 +129,7 @@ function hook_keymap(mapping, err)
 			-- - we're wrapping an expr mapping, which might give back "<Left>" instead of "\<Left>"
 			--   > nmap <expr> R "<Left>" behaves as a left-key
 			-- - we're a non-<Plug>, non-<expr> mapping - still replace
-			replace_keycodes = true,
+			replace_keycodes = false,
 
 			desc =
 				"cartographer: " .. mapping.lhs .. " -> " .. rhs_desc ..
@@ -145,6 +145,21 @@ function hook_keymap(mapping, err)
 					out = vim.fn.eval(mapping.rhs)
 				else
 					out = mapping.rhs
+				end
+
+				-- replace termcodes, unless we see a termcode already
+				-- (e.g. "\<Left>" is "\x80kl")
+				--
+				-- this prevents us from replacing termcodes in a string
+				-- which already has them replaced, which breaks for the
+				-- command line (see the test)
+				if not out:match("\x80") then
+					out = vim.api.nvim_replace_termcodes(
+						out,
+						true, -- from_part
+						false, -- do_lt <lt>
+						true -- special (<CR>, etc)
+					)
 				end
 
 				return out

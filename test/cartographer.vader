@@ -153,3 +153,19 @@ Then (assert command is used):
 Expect (changed text):
   lineend
   lineend
+
+Given (a mapping returning a termcode while in commandline mode):
+  line0
+Before:
+  nnoremap <expr> CA ":\<C-U>call append('$', 'hi')\<Left>\<Left>\<Left>x\<CR>"
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping CA
+Do (execute the mapping):
+  CA
+Then (assert command is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "CA")')
+  Assert uses == 1
+Expect (changed text):
+  line0
+  hxi
