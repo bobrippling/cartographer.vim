@@ -50,8 +50,6 @@ local hooked = {} --[[
 	}
 ]]
 
-local save = true
-
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 
@@ -441,9 +439,7 @@ function M.install()
 	end
 end
 
-function M.exit()
-	if not save then return end
-
+function M.save_stats()
 	local log_with_scriptnames = {}
 
 	for sid, types in pairs(scriptlog) do
@@ -598,10 +594,6 @@ function M.hook(args, q_bang)
 	if not found then
 		error(("no %s found for \"%s\""):format(type, name))
 	end
-end
-
-function M.dont_save()
-	save = false
 end
 
 function M.uses(type, name)

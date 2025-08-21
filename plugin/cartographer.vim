@@ -21,10 +21,11 @@ if exists('g:plugs')
 endif
 
 command! -bang -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
-command! -bar CartographerDontSave lua require('cartographer').dont_save()
 command! -bar -nargs=* -bang CartographerHook lua require('cartographer').hook({<f-args>}, <q-bang>)
+
+command! -bar CartographerDontSave aug CartographerExit | au! | aug END
 
 augroup CartographerExit
 	autocmd!
-	autocmd VimLeave * lua require('cartographer').exit()
+	autocmd VimLeave * lua require('cartographer').save_stats()
 augroup END
