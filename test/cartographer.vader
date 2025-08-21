@@ -48,7 +48,7 @@ Expect (changed text):
 Given (a mapping containing <lt>):
   paragraph
   entry
-  
+
   hello
 Before:
   nnoremap a< >ip
@@ -64,7 +64,7 @@ Then (assert map is used):
 Expect (changed text):
     paragraph
     entry
-  
+
   hello
 
 Given (an operator-pending mapping):
@@ -83,7 +83,7 @@ Then (assert map is used):
   Assert uses == 1
 Expect (changed text):
   text
-  
+
   text3
 
 Given (a <Plug> mapping):
@@ -169,3 +169,32 @@ Then (assert command is used):
 Expect (changed text):
   line0
   hxi
+
+Given (a simple mapping with a termcode):
+  line0
+Before:
+  nnoremap T ihello<Esc>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  echom "uses is" uses
+  Assert uses == 1
+Execute (unhook the mapping):
+  " this doesn't seem to work - maybe it needs a return to the event loop first? (`:h api-fast`)
+  CartographerUnhook mapping T
+  echom "unhooked 'T'"
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  echom "uses is" uses
+  Assert uses == 1
+Expect (changed text):
+  helloline0
+
+# TODO: test mapping unhook, with <termcodes> in the RHS, both for <expr> and not
+# TODO: test command unhook (assert uses() doesn't change afterwards)
