@@ -21,6 +21,7 @@ local can_remap_mode
 local hook_cmd
 local hook_keymap
 local already_hooked
+local preprocess_cmd
 
 local scriptlog = {} --[[
 	{
@@ -186,16 +187,7 @@ local function hook_cmds()
 	end
 end
 
-function hook_cmd(cmd, err)
-	if already_hooked(cmd) then
-		if err.if_exists then
-			error(("command %s already hooked"):format(cmd.name))
-		end
-		return
-	end
-
-	-- TODO: handle cmd.buffer
-
+function preprocess_cmd(cmd)
 	if cmd.nargs:match("^[01]$") ~= nil then
 		cmd.nargs = tonumber(cmd.nargs)
 	end
@@ -223,6 +215,19 @@ function hook_cmd(cmd, err)
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 	end
+end
+
+function hook_cmd(cmd, err)
+	if already_hooked(cmd) then
+		if err.if_exists then
+			error(("command %s already hooked"):format(cmd.name))
+		end
+		return
+	end
+
+	-- TODO: handle cmd.buffer
+
+	preprocess_cmd(cmd)
 
 	log_hooked(cmd.script_id, "command", cmd.name, cmd)
 
