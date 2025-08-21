@@ -22,6 +22,7 @@ local hook_cmd
 local hook_keymap
 local already_hooked
 local preprocess_cmd
+local make_plug_mapping_lhs
 
 local scriptlog = {} --[[
 	{
@@ -63,6 +64,10 @@ function already_hooked(map)
 	return map.desc and map.desc:match("^cartographer: ")
 end
 
+function make_plug_mapping_lhs(mapping)
+	return "<Plug>(cart_" .. mapping.lhs .. ")"
+end
+
 function hook_keymap(mapping, err)
 	if already_hooked(mapping) then
 		if err.if_exists then
@@ -91,7 +96,7 @@ function hook_keymap(mapping, err)
 	local rhs_desc = mapping.rhs
 	local plug_mapping
 	if not nil_or_zero(mapping.silent) then
-		plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
+		plug_mapping = make_plug_mapping_lhs(mapping)
 		rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
 		remap = false
 
