@@ -44,8 +44,8 @@ local scriptlog = {} --[[
 local hooked = {} --[[
 	{
 		[sid] = {
-			command = { [name] = true },
-			mapping = { [lhs] = true },
+			command = { [name] = <orig> },
+			mapping = { [lhs] = <orig> },
 		}
 	}
 ]]
@@ -85,7 +85,7 @@ function hook_keymap(mapping, err)
 
 	local scriptpath = scriptname(mapping.sid, true)
 
-	log_hooked(mapping.sid, "mapping", mapping.lhs)
+	log_hooked(mapping.sid, "mapping", mapping.lhs, mapping)
 
 	local rhs_desc = mapping.rhs
 	local plug_mapping
@@ -224,7 +224,7 @@ function hook_cmd(cmd, err)
 		end
 	end
 
-	log_hooked(cmd.script_id, "command", cmd.name)
+	log_hooked(cmd.script_id, "command", cmd.name, cmd)
 
 	vim.api.nvim_create_user_command(
 		cmd.name,
@@ -345,9 +345,9 @@ function log_entry(map, sid, ty)
 	return t
 end
 
-function log_hooked(sid, type, desc)
+function log_hooked(sid, type, desc, orig)
 	local entry = log_entry(hooked, sid, type)
-	entry[desc] = true
+	entry[desc] = orig
 end
 
 function log_create(sid, ty, desc)
@@ -619,7 +619,7 @@ function M.uses(type, name)
 	if not found then
 		local is_hooked = false
 		for _sid, hooked_types in pairs(hooked) do
-			for name_, _true in pairs(hooked_types[type] or {}) do
+			for name_, _orig in pairs(hooked_types[type] or {}) do
 				if name_ == name then
 					is_hooked = true
 					goto fin
@@ -657,7 +657,7 @@ function M.usage_summary()
 			summary[fname] = {}
 
 			for ty, hook_entries in pairs(hooked_types) do
-				for entry, _true in pairs(hook_entries) do
+				for entry, _orig in pairs(hook_entries) do
 					local stat = scriptlog[sid]
 						and scriptlog[sid][ty]
 						and scriptlog[sid][ty][entry]
