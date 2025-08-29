@@ -1,6 +1,6 @@
 Given (a <expr> mapping with a non-expanded termcode):
   text
-Before:
+Execute (set & hook the mapping):
   nnoremap <expr> gs ":<C-U>s/x/s/<CR>"
   "                    ^ no backslash
   lua require("cartographer").clear()
@@ -16,7 +16,7 @@ Expect (changed text):
 
 Given (a <expr> mapping with an expanded termcode):
   text
-Before:
+Execute (set & hook the mapping):
   nnoremap <expr> gs ":\<C-U>s/x/s/<CR>"
   "                    ^
   lua require("cartographer").clear()
@@ -32,7 +32,7 @@ Expect (changed text):
 
 Given (a non-expr mapping with a termcode):
   text
-Before:
+Execute (set & hook the mapping):
   nnoremap R <Left>
   lua require("cartographer").clear()
   CartographerDontSave
@@ -50,7 +50,7 @@ Given (a mapping containing <lt>):
   entry
   
   hello
-Before:
+Execute (set & hook the mapping):
   nnoremap a< >ip
   setl et ts=2 sw=0
   lua require("cartographer").clear()
@@ -71,7 +71,7 @@ Given (an operator-pending mapping):
   text
   text2
   text3
-Before:
+Execute (set & hook the mapping):
   onoremap il :<C-U>normal! v0o$<CR>
   lua require("cartographer").clear()
   CartographerDontSave
@@ -89,7 +89,7 @@ Expect (changed text):
 Given (a <Plug> mapping):
   text
 # we don't wrap the <Plug> mapping, but we still trigger it via another
-Before:
+Execute (set & hook the mapping):
   nnoremap <Plug>(aplug) :<C-U>s/x/s/<CR>
   nnoremap doit <Plug>(aplug)
   lua require("cartographer").clear()
@@ -109,7 +109,7 @@ Expect (changed text):
 Given (a <silent> mapping):
   text
 # we install a <Plug> mapping to preserve <silent>, ensure it is triggered
-Before:
+Execute (set & hook the mapping):
   nnoremap <silent> abc :<C-U>s/x/s/<CR>
   lua require("cartographer").clear()
   CartographerDontSave
@@ -124,7 +124,7 @@ Expect (changed text):
 
 Given (an attempt to hook a <Plug> mapping):
   text
-Before:
+Execute (set & hook the mapping):
   nnoremap <Plug>(abc) xyz
   lua require("cartographer").clear()
   CartographerDontSave
@@ -140,7 +140,7 @@ Execute (attempt to hook it, assert error):
 Given (a command with a literal '<'):
   line0
   line1
-Before:
+Execute (set & hook the mapping):
   command! -bang WithLt normal<bang> $Cend
   lua require("cartographer").clear()
   CartographerDontSave
@@ -156,7 +156,7 @@ Expect (changed text):
 
 Given (a mapping returning a termcode while in commandline mode):
   line0
-Before:
+Execute (set & hook the mapping):
   nnoremap <expr> CA ":\<C-U>call append('$', 'hi')\<Left>\<Left>\<Left>x\<CR>"
   lua require("cartographer").clear()
   CartographerDontSave
