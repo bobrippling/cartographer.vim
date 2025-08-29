@@ -10,7 +10,8 @@ if !has("nvim")
 	throw "cartographer: can't install hooks - need neovim"
 endif
 
-lua require('cartographer').install()
+" run later to capture late-loaded scripts
+lua vim.defer_fn(function() require('cartographer').install() end, 0)
 
 if exists('g:plugs')
 \ && !empty(filter(values(g:plugs)[:], { _, ent -> has_key(ent, 'for') || has_key(ent, 'on') }))
