@@ -427,7 +427,7 @@ function M.install()
 			end
 			scriptlog[sid] = types
 		else
-			emit_err(("Cartographer: no <SID> for filename %q"):format(fname))
+			emit_err(("Cartographer: no loaded script (SID) found for filename %q"):format(fname))
 			rejects[fname] = types
 			got_reject = true
 		end
