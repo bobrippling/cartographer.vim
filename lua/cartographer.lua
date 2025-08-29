@@ -363,6 +363,8 @@ function unhook_keymap(mapping_obj, err)
 			vim.api.nvim_del_keymap(orig.mode, plug_mapping)
 		end
 
+		local scriptpath = scriptname(orig.sid, true)
+
 		-- restore original mapping
 		vim.api.nvim_set_keymap(
 			orig.mode,
@@ -377,6 +379,10 @@ function unhook_keymap(mapping_obj, err)
 				--buffer = orig.buffer, TODO
 				expr = orig.expr,
 				--replace_keycodes = true, -- this requires `expr`
+
+				desc =
+					"cartographer unhooked mapping: " .. orig.lhs .. " -> " .. orig.rhs ..
+					" (" .. "Orig set from " .. scriptpath .. " line " .. orig.lnum .. ")",
 			}
 		)
 	end)
