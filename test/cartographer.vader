@@ -150,6 +150,7 @@ Do (run the command):
 Then (assert command is used):
   let uses = luaeval('require("cartographer").uses("command", "WithLt")')
   Assert uses == 2
+  CartographerUnhook command WithLt
 Expect (changed text):
   lineend
   lineend
@@ -213,3 +214,30 @@ Then (assert mapping is not used again / not still hooked):
   Assert uses == 1
 Expect (changed text):
   hellhellhelloooline0
+
+Given (a command):
+  line0
+  line1
+Execute (set & hook the command):
+  command! -bang WithLt normal<bang> $Cend
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! command WithLt
+Do (execute the command):
+  :WithLt\<CR>
+Then (assert command is used):
+  let uses = luaeval('require("cartographer").uses("command", "WithLt")')
+  Assert uses == 1
+Expect (changed text):
+  lineend
+  line1
+Execute (unhook the command):
+  CartographerUnhook command WithLt
+Do (execute the command again):
+  j:WithLt\<CR>:WithLt\<CR>
+Then (assert command is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("command", "WithLt")')
+  Assert uses == 1
+Expect (changed text):
+  line0
+  lineenend
