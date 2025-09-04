@@ -21,6 +21,11 @@ local can_remap_mode
 local hook_cmd
 local hook_keymap
 local already_hooked
+local preprocess_cmd
+local make_plug_mapping_lhs
+local unhook_cmd
+local unhook_keymap
+local unhook
 
 local scriptlog = {} --[[
 	{
@@ -44,8 +49,8 @@ local scriptlog = {} --[[
 local hooked = {} --[[
 	{
 		[sid] = {
-			command = { [name] = true },
-			mapping = { [lhs] = true },
+			command = { [name] = <orig> },
+			mapping = { [lhs] = <orig> },
 		}
 	}
 ]]
@@ -60,6 +65,10 @@ end
 
 function already_hooked(map)
 	return map.desc and map.desc:match("^cartographer: ")
+end
+
+function make_plug_mapping_lhs(mapping)
+	return "<Plug>(cart_" .. mapping.lhs .. ")"
 end
 
 function hook_keymap(mapping, err)
@@ -85,12 +94,12 @@ function hook_keymap(mapping, err)
 
 	local scriptpath = scriptname(mapping.sid, true)
 
-	log_hooked(mapping.sid, "mapping", mapping.lhs)
+	log_hooked(mapping.sid, "mapping", mapping.lhs, mapping)
 
 	local rhs_desc = mapping.rhs
 	local plug_mapping
 	if not nil_or_zero(mapping.silent) then
-		plug_mapping = "<Plug>(cart_" .. mapping.lhs .. ")"
+		plug_mapping = make_plug_mapping_lhs(mapping)
 		rhs_desc = plug_mapping .. " (then on to " .. rhs_desc .. ")"
 		remap = false
 
@@ -186,16 +195,7 @@ local function hook_cmds()
 	end
 end
 
-function hook_cmd(cmd, err)
-	if already_hooked(cmd) then
-		if err.if_exists then
-			error(("command %s already hooked"):format(cmd.name))
-		end
-		return
-	end
-
-	-- TODO: handle cmd.buffer
-
+function preprocess_cmd(cmd)
 	if cmd.nargs:match("^[01]$") ~= nil then
 		cmd.nargs = tonumber(cmd.nargs)
 	end
@@ -223,8 +223,21 @@ function hook_cmd(cmd, err)
 			cmd.complete = cmd.complete .. "," .. cmd.complete_arg
 		end
 	end
+end
 
-	log_hooked(cmd.script_id, "command", cmd.name)
+function hook_cmd(cmd, err)
+	if already_hooked(cmd) then
+		if err.if_exists then
+			error(("command %s already hooked"):format(cmd.name))
+		end
+		return
+	end
+
+	-- TODO: handle cmd.buffer
+
+	preprocess_cmd(cmd)
+
+	log_hooked(cmd.script_id, "command", cmd.name, cmd)
 
 	vim.api.nvim_create_user_command(
 		cmd.name,
@@ -289,6 +302,92 @@ function hook_cmd(cmd, err)
 	)
 end
 
+function unhook(name, err, hook_type, cb)
+	-- restore original command/mapping, don't delete
+	local orig
+	local sid
+
+	for sid_, hooked_types in pairs(hooked) do
+		for name_, orig_ in pairs(hooked_types[hook_type] or {}) do
+			if name_ == name then
+				orig = orig_
+				sid = sid_
+				goto found
+			end
+		end
+	end
+	::found::
+
+	if orig == nil then
+		error(("no %s-hook found for \"%s\""):format(hook_type, name))
+	end
+
+	cb(orig)
+
+	hooked[sid][hook_type][name] = nil
+end
+
+function unhook_cmd(cmd_obj, err)
+	unhook(cmd_obj.name, err, "command", function(orig)
+		--preprocess_cmd(orig) -- TODO: only do this once? necessary at all? think so
+
+		vim.api.nvim_create_user_command(
+			orig.name,
+			orig.definition,
+			{
+				force = true,
+
+				addr = orig.addr,
+				bang = orig.bang,
+				bar = orig.bar,
+				complete = orig.complete,
+				--complete_arg = orig.complete_arg, -- bundled as part of orig.complete
+				count = orig.count,
+				keepscript = orig.keepscript, -- true, -- don't refer back to here for `:verbose <command>`
+				nargs = orig.nargs,
+				--preview = orig.preview, -- we only get a boolean, not the preview function (lua or vimscript)
+				range = orig.range,
+				register = orig.register,
+
+				desc = nil,
+			}
+		)
+	end)
+end
+
+function unhook_keymap(mapping_obj, err)
+	unhook(mapping_obj.lhs, err, "mapping", function(orig)
+		-- delete the <Plug> keymap we installed (if we did)
+		if not nil_or_zero(orig.silent) then
+			local plug_mapping = make_plug_mapping_lhs(orig)
+			vim.api.nvim_del_keymap(orig.mode, plug_mapping)
+		end
+
+		local scriptpath = scriptname(orig.sid, true)
+
+		-- restore original mapping
+		vim.api.nvim_set_keymap(
+			orig.mode,
+			orig.lhs,
+			orig.rhs,
+			{
+				noremap = orig.noremap,
+				nowait = not nil_or_zero(orig.nowait),
+				script = not nil_or_zero(orig.script),
+				silent = not nil_or_zero(orig.silent),
+				--abbr = orig.abbr,
+				--buffer = orig.buffer, TODO
+				expr = orig.expr,
+				--replace_keycodes = true, -- this requires `expr`
+
+				desc =
+					"cartographer unhooked mapping: " .. orig.lhs .. " -> " .. orig.rhs ..
+					" (" .. "Orig set from " .. scriptpath .. " line " .. orig.lnum .. ")",
+			}
+		)
+	end)
+end
+
 function replace_placeholders(str, values)
 	return str:gsub("<(.-)>", function(key)
 		local prefix, name = key:match("^(.-)%-(.+)$")
@@ -345,9 +444,9 @@ function log_entry(map, sid, ty)
 	return t
 end
 
-function log_hooked(sid, type, desc)
+function log_hooked(sid, type, desc, orig)
 	local entry = log_entry(hooked, sid, type)
-	entry[desc] = true
+	entry[desc] = orig
 end
 
 function log_create(sid, ty, desc)
@@ -596,6 +695,55 @@ function M.hook(args, q_bang)
 	end
 end
 
+function M.unhook(args, q_bang)
+	-- TODO: merge this code with M.hook()
+	local function usage()
+		error("usage: unhook | unhook <type> <name>")
+	end
+	local type, name
+	local bang = q_bang:len() > 0
+
+	if #args == 2 then
+		type, name = unpack(args)
+	elseif #args ~= 0 then
+		usage()
+	end
+
+	if type == nil then
+		unhook_keymaps() -- TODO
+		unhook_cmds() -- TODO
+		return
+	end
+
+	local found = false
+
+	if type == "mapping" then
+		local keymap = vim.api.nvim_get_keymap('')
+
+		for i, mapping in pairs(keymap) do
+			if mapping.lhs == name then
+				unhook_keymap(mapping, { if_exists = not bang, invalid = true })
+				found = true
+			end
+		end
+	elseif type == "command" then
+		local cmds = vim.api.nvim_get_commands {}
+
+		for _, cmd in pairs(cmds) do
+			if cmd.name == name then
+				unhook_cmd(cmd, not bang)
+				found = true
+			end
+		end
+	else
+		usage()
+	end
+
+	if not found then
+		error(("no %s found for \"%s\""):format(type, name))
+	end
+end
+
 function M.uses(type, name)
 	local uses = 0
 	local found = false
@@ -619,7 +767,7 @@ function M.uses(type, name)
 	if not found then
 		local is_hooked = false
 		for _sid, hooked_types in pairs(hooked) do
-			for name_, _true in pairs(hooked_types[type] or {}) do
+			for name_, _orig in pairs(hooked_types[type] or {}) do
 				if name_ == name then
 					is_hooked = true
 					goto fin
@@ -657,7 +805,7 @@ function M.usage_summary()
 			summary[fname] = {}
 
 			for ty, hook_entries in pairs(hooked_types) do
-				for entry, _true in pairs(hook_entries) do
+				for entry, _orig in pairs(hook_entries) do
 					local stat = scriptlog[sid]
 						and scriptlog[sid][ty]
 						and scriptlog[sid][ty][entry]

@@ -150,6 +150,7 @@ Do (run the command):
 Then (assert command is used):
   let uses = luaeval('require("cartographer").uses("command", "WithLt")')
   Assert uses == 2
+  CartographerUnhook command WithLt
 Expect (changed text):
   lineend
   lineend
@@ -169,3 +170,109 @@ Then (assert command is used):
 Expect (changed text):
   line0
   hxi
+
+Given (a simple mapping with a termcode):
+  line0
+Execute (set & hook the mapping):
+  nnoremap T ihello<Esc>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Execute (unhook the mapping):
+  CartographerUnhook mapping T
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Expect (changed text):
+  hellhellhelloooline0
+
+Given (an expr mapping with termcodes):
+  line0
+Execute (set & hook the mapping):
+  nnoremap <expr> T "ihello\<Esc>"
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Execute (unhook the mapping):
+  CartographerUnhook mapping T
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Expect (changed text):
+  hellhellhelloooline0
+
+Given (a silent mapping):
+  line0
+Execute (set & hook the mapping):
+  nnoremap <silent> T ihello<Esc>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+  " assert the <Plug> map exists
+  Assert len(mapcheck("<Plug>(cart_T)")) > 0
+  " remap <Plug> so we can detect if it's used
+  let g:plug_maps_T = 0
+  function! Cart_T()
+    let g:plug_maps_T += 1
+    return "ihello\<Esc>"
+  endfunction
+  nmap <expr> <Plug>(cart_T) Cart_T()
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+  Assert g:plug_maps_T == 1
+Execute (unhook the mapping):
+  CartographerUnhook mapping T
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked and <Plug> map is gone):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+  Assert g:plug_maps_T == 1
+  " assert the <Plug> map is deleted
+  Assert len(mapcheck("<Plug>(cart_T)")) == 0
+Expect (changed text):
+  hellhellhelloooline0
+
+Given (a command):
+  line0
+  line1
+Execute (set & hook the command):
+  command! -bang WithLt normal<bang> $Cend
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! command WithLt
+Do (execute the command):
+  :WithLt\<CR>
+Then (assert command is used):
+  let uses = luaeval('require("cartographer").uses("command", "WithLt")')
+  Assert uses == 1
+Expect (changed text):
+  lineend
+  line1
+Execute (unhook the command):
+  CartographerUnhook command WithLt
+Do (execute the command again):
+  j:WithLt\<CR>:WithLt\<CR>
+Then (assert command is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("command", "WithLt")')
+  Assert uses == 1
+Expect (changed text):
+  line0
+  lineenend

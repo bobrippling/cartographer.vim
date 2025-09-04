@@ -23,6 +23,7 @@ endif
 
 command! -bang -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
 command! -bar -nargs=* -bang CartographerHook lua require('cartographer').hook({<f-args>}, <q-bang>)
+command! -bar -nargs=* -bang CartographerUnhook lua require('cartographer').unhook({<f-args>}, <q-bang>)
 
 command! -bar CartographerDontSave aug CartographerExit | au! | aug END
 
