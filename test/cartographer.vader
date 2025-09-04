@@ -222,6 +222,8 @@ Execute (set & hook the mapping):
   lua require("cartographer").clear()
   CartographerDontSave
   CartographerHook! mapping T
+  " assert the <Plug> map exists
+  Assert len(mapcheck("<Plug>(cart_T)")) > 0
   " remap <Plug> so we can detect if it's used
   let g:plug_maps_T = 0
   function! Cart_T()
@@ -239,11 +241,12 @@ Execute (unhook the mapping):
   CartographerUnhook mapping T
 Do (execute the mapping again):
   TTT
-Then (assert mapping is not used again / not still hooked):
+Then (assert mapping is not used again / not still hooked and <Plug> map is gone):
   let uses = luaeval('require("cartographer").uses("mapping", "T")')
   Assert uses == 1
   Assert g:plug_maps_T == 1
-  " TODO: assert the <Plug> map is deleted?
+  " assert the <Plug> map is deleted
+  Assert len(mapcheck("<Plug>(cart_T)")) == 0
 Expect (changed text):
   hellhellhelloooline0
 
