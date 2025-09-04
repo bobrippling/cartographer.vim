@@ -628,7 +628,7 @@ function M.uses(type, name)
 		end
 		::fin::
 
-		error(("no %s for \"%s\" (%s)"):format(
+		error(("no %s uses for \"%s\" (%s)"):format(
 			type,
 			name,
 			is_hooked and "hooked but not used" or "not hooked"
