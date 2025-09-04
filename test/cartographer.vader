@@ -215,6 +215,38 @@ Then (assert mapping is not used again / not still hooked):
 Expect (changed text):
   hellhellhelloooline0
 
+Given (a silent mapping):
+  line0
+Execute (set & hook the mapping):
+  nnoremap <silent> T ihello<Esc>
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+  " remap <Plug> so we can detect if it's used
+  let g:plug_maps_T = 0
+  function! Cart_T()
+    let g:plug_maps_T += 1
+    return "ihello\<Esc>"
+  endfunction
+  nmap <expr> <Plug>(cart_T) Cart_T()
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+  Assert g:plug_maps_T == 1
+Execute (unhook the mapping):
+  CartographerUnhook mapping T
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+  Assert g:plug_maps_T == 1
+  " TODO: assert the <Plug> map is deleted?
+Expect (changed text):
+  hellhellhelloooline0
+
 Given (a command):
   line0
   line1
