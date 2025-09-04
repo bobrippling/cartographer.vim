@@ -191,3 +191,25 @@ Then (assert mapping is not used again / not still hooked):
   Assert uses == 1
 Expect (changed text):
   hellhellhelloooline0
+
+Given (an expr mapping with termcodes):
+  line0
+Execute (set & hook the mapping):
+  nnoremap <expr> T "ihello\<Esc>"
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! mapping T
+Do (execute the mapping):
+  T
+Then (assert mapping is used):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Execute (unhook the mapping):
+  CartographerUnhook mapping T
+Do (execute the mapping again):
+  TTT
+Then (assert mapping is not used again / not still hooked):
+  let uses = luaeval('require("cartographer").uses("mapping", "T")')
+  Assert uses == 1
+Expect (changed text):
+  hellhellhelloooline0
