@@ -5,6 +5,10 @@
 if !get(g:, 'cartographer_enabled', 1)
 	finish
 endif
+if $CARTOGRAPHER ==# "0"
+	echom "cartographer disabled via environment"
+	finish
+endif
 
 if !has("nvim")
 	throw "cartographer: can't install hooks - need neovim"
