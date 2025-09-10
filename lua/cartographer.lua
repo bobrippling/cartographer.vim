@@ -26,6 +26,7 @@ local make_plug_mapping_lhs
 local unhook_cmd
 local unhook_keymap
 local unhook
+local hook_all
 
 local scriptlog = {} --[[
 	{
@@ -510,9 +511,13 @@ function nil_or_zero(x)
 	return x == nil or x == 0
 end
 
-function M.install()
+function hook_all()
 	hook_cmds()
 	hook_keymaps()
+end
+
+function M.install()
+	hook_all()
 
 	local log_with_scriptnames = load_table(FNAME_LOG) or {}
 	local rejects = {}
@@ -661,8 +666,7 @@ function M.hook(args, q_bang)
 	--name = name:gsub("<", "<lt>")
 
 	if type == nil then
-		hook_keymaps()
-		hook_cmds()
+		hook_all()
 		return
 	end
 
