@@ -26,8 +26,8 @@ For a more detailed summary, Cartographer uses Neovim's `:checkhealth` to displa
 
 ## TODO
 
-- [.] `:CartographerUnhook`
+- [x] `:CartographerUnhook`
+- [x] Hook `:abbrev`s
 - [ ] `-complete` for `:Cartographer*` commands
 - [ ] A way to re-source files
 - [ ] Handle `<buffer>` commands and mappings
-- [ ] Hook `:abbrev`s

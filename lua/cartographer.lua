@@ -58,9 +58,13 @@ local hooked = {} --[[
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
-
 	for _, mapping in pairs(keymap) do
-		hook_keymap(mapping, {})
+		hook_keymap(mapping, {}, "mapping")
+	end
+
+	local abbrmap = vim.api.nvim_get_keymap('!a')
+	for _, abbr in pairs(abbrmap) do
+		hook_keymap(abbr, {}, "abbrev")
 	end
 end
 
@@ -72,10 +76,10 @@ function make_plug_mapping_lhs(mapping)
 	return "<Plug>(cart_" .. mapping.lhs .. ")"
 end
 
-function hook_keymap(mapping, err)
+function hook_keymap(mapping, err, ty)
 	if already_hooked(mapping) then
 		if err.if_exists then
-			error(("mapping %s already hooked"):format(mapping.lhs))
+			error(("%s %s already hooked"):format(ty, mapping.lhs))
 		end
 		return
 	end
@@ -95,7 +99,7 @@ function hook_keymap(mapping, err)
 
 	local scriptpath = scriptname(mapping.sid, true)
 
-	log_hooked(mapping.sid, "mapping", mapping.lhs, mapping)
+	log_hooked(mapping.sid, ty, mapping.lhs, mapping)
 
 	local rhs_desc = mapping.rhs
 	local plug_mapping
@@ -128,6 +132,8 @@ function hook_keymap(mapping, err)
 			script = not nil_or_zero(mapping.script),
 			silent = not nil_or_zero(mapping.silent),
 			--abbr = mapping.abbr,
+			-- ^ no key here, implied via `mapping.mode` (!a, ia, ca), from what's passed in (e.g. from nvim_get_keymap(<type>, ...))
+			-- abbrev mappings aren't shown with a description, despite setting it here, oddly
 			--buffer = mapping.buffer, TODO
 
 			expr = true, -- this allows us to return a string from `callback`
@@ -144,7 +150,7 @@ function hook_keymap(mapping, err)
 				" (" .. "Last set from " .. scriptpath .. " line " .. mapping.lnum .. ")",
 
 			callback = function()
-				log_timestamp(mapping.sid, "mapping", mapping.lhs)
+				log_timestamp(mapping.sid, ty, mapping.lhs)
 
 				local out
 				if plug_mapping then
@@ -356,8 +362,8 @@ function unhook_cmd(cmd_obj, err)
 	end)
 end
 
-function unhook_keymap(mapping_obj, err)
-	unhook(mapping_obj.lhs, err, "mapping", function(orig)
+function unhook_keymap(mapping_obj, err, ty)
+	unhook(mapping_obj.lhs, err, ty, function(orig)
 		-- delete the <Plug> keymap we installed (if we did)
 		if not nil_or_zero(orig.silent) then
 			local plug_mapping = make_plug_mapping_lhs(orig)
@@ -376,7 +382,7 @@ function unhook_keymap(mapping_obj, err)
 				nowait = not nil_or_zero(orig.nowait),
 				script = not nil_or_zero(orig.script),
 				silent = not nil_or_zero(orig.silent),
-				--abbr = orig.abbr,
+				--abbr = orig.abbr, -- implied by `orig.mode`
 				--buffer = orig.buffer, TODO
 				expr = orig.expr,
 				--replace_keycodes = true, -- this requires `expr`
@@ -672,12 +678,12 @@ function M.hook(args, q_bang)
 
 	local found = false
 
-	if type == "mapping" then
-		local keymap = vim.api.nvim_get_keymap('')
+	if type == "mapping" or type == "abbrev" then
+		local keymap = type == "mapping" and vim.api.nvim_get_keymap('') or vim.api.nvim_get_keymap('!a')
 
 		for i, mapping in pairs(keymap) do
 			if mapping.lhs == name then
-				hook_keymap(mapping, { if_exists = not bang, invalid = true })
+				hook_keymap(mapping, { if_exists = not bang, invalid = true }, type)
 				found = true
 			end
 		end
@@ -721,12 +727,12 @@ function M.unhook(args, q_bang)
 
 	local found = false
 
-	if type == "mapping" then
-		local keymap = vim.api.nvim_get_keymap('')
+	if type == "mapping" or type == "abbrev" then
+		local keymap = type == "mapping" and vim.api.nvim_get_keymap('') or vim.api.nvim_get_keymap('!a')
 
 		for i, mapping in pairs(keymap) do
 			if mapping.lhs == name then
-				unhook_keymap(mapping, { if_exists = not bang, invalid = true })
+				unhook_keymap(mapping, { if_exists = not bang, invalid = true }, type)
 				found = true
 			end
 		end

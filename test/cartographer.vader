@@ -276,3 +276,18 @@ Then (assert command is not used again / not still hooked):
 Expect (changed text):
   line0
   lineenend
+
+Given (an abbreviation):
+  text
+Execute (set & hook the abbrev):
+  iabbrev abc HELLO
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! abbrev abc
+Do (trigger the abbrev):
+  iabc
+Then (assert abbrev is used):
+  let uses = luaeval('require("cartographer").uses("abbrev", "abc")')
+  Assert uses == 1
+Expect (changed text):
+  HELLOtext
