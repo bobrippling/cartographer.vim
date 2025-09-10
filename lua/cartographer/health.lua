@@ -35,6 +35,10 @@ M.check = function()
 		vim.health.warn("No gathered statistics")
 	end
 
+	for _, ent in pairs(C.unhookable()) do
+		vim.health.warn(ent)
+	end
+
 	for fname, types in pairs(script_summary) do
 		local used = {}
 		local no_uses = {}

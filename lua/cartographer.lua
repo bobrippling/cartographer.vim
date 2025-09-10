@@ -56,6 +56,8 @@ local hooked = {} --[[
 	}
 ]]
 
+local unhookable = {}
+
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
 	for _, mapping in pairs(keymap) do
@@ -198,7 +200,10 @@ local function hook_cmds()
 	local cmds = vim.api.nvim_get_commands {}
 
 	for _, cmd in pairs(cmds) do
-		hook_cmd(cmd, false)
+		local ok, e = pcall(hook_cmd, cmd, false)
+		if not ok then
+			table.insert(unhookable, e.msg)
+		end
 	end
 end
 
@@ -238,6 +243,18 @@ function hook_cmd(cmd, err)
 			error(("command %s already hooked"):format(cmd.name))
 		end
 		return
+	end
+
+	local script_var = cmd.definition:match("s:[A-Za-z0-9_]*[^A-Za-z0-9_(]")
+	if script_var then
+		error({
+			what = "script_var",
+			msg =
+				("can't hook %s: contains a reference to a script-variable (%q)"):format(
+					cmd.name,
+					script_var:sub(0, script_var:len() - 1)
+				)
+		})
 	end
 
 	-- TODO: handle cmd.buffer
@@ -844,6 +861,10 @@ function M.usage_summary()
 	end
 
 	return summary
+end
+
+function M.unhookable()
+	return unhookable
 end
 
 return M
