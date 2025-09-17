@@ -25,9 +25,19 @@ if exists('g:plugs')
 	echohl None
 endif
 
+function! CartographerHookComplete(arglead, cmdline, cursorpos)
+	if a:cmdline =~# '^\vCartographer(H%[ook]|U%[nhook])\s+command\s+'
+		return filter(getcompletion(a:arglead, 'command'), { _, cmd -> cmd[0] =~# '[A-Z]' })
+	elseif a:cmdline =~# '^\vCartographer(H%[ook]|U%[nhook])\s+mapping\s+'
+		return getcompletion(a:arglead, 'mapping')
+	endif
+
+	return ['command', 'mapping']
+endfunction
+
 command! -bang -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
-command! -bar -nargs=* -bang CartographerHook lua require('cartographer').hook({<f-args>}, <q-bang>)
-command! -bar -nargs=* -bang CartographerUnhook lua require('cartographer').unhook({<f-args>}, <q-bang>)
+command! -bar -nargs=* -bang -complete=customlist,CartographerHookComplete CartographerHook lua require('cartographer').hook({<f-args>}, <q-bang>)
+command! -bar -nargs=* -bang -complete=customlist,CartographerHookComplete CartographerUnhook lua require('cartographer').unhook({<f-args>}, <q-bang>)
 
 command! -bar CartographerDontSave aug CartographerExit | au! | aug END
 
