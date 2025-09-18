@@ -29,7 +29,7 @@ For a more detailed summary, Cartographer uses Neovim's `:checkhealth` to displa
 - [x] `:CartographerUnhook`
 - [x] Hook `:abbrev`s
 - [x] Fix `:NoTrim <...>`
+- [x] `-complete` for `:Cartographer*` commands
 - [ ] Fix `:PlugInstall`'s breaking of hooks
-- [ ] `-complete` for `:Cartographer*` commands
 - [ ] A way to re-source files
 - [ ] Handle `<buffer>` commands and mappings

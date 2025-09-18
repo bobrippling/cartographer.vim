@@ -32,7 +32,7 @@ function! CartographerHookComplete(arglead, cmdline, cursorpos)
 		return getcompletion(a:arglead, 'mapping')
 	endif
 
-	return ['command', 'mapping']
+	return filter(['command', 'mapping'], { _, x -> a:arglead ==# '' || x[0:len(a:arglead)-1] ==# a:arglead })
 endfunction
 
 command! -bang -bar CartographerLog lua require('cartographer').show_log(<q-bang>)
