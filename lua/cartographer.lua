@@ -256,6 +256,13 @@ function hook_cmd(cmd, err)
 				)
 		})
 	end
+	if cmd.definition == "" then
+		-- TODO: get hold of the lua callback (not currently possible)
+		error({
+			what = "empty command def / lua callback",
+			msg = ("can't hook %s: command is empty or a lua callback"):format(cmd.name)
+		})
+	end
 
 	-- TODO: handle cmd.buffer
 
