@@ -522,7 +522,9 @@ function load_table(filename)
 	return vim.json.decode(content)
 end
 
-function fname_to_sid(fname)
+function fname_to_sid(fname, home)
+	fname = fname:gsub("^~/", home, 1)
+
 	local info = vim.fn.getscriptinfo { name = "^" .. fname .. "$" } -- not perfect
 	for _, script in pairs(info) do
 		if script.name == fname then
@@ -552,9 +554,10 @@ function M.install()
 	local log_with_scriptnames = load_table(FNAME_LOG) or {}
 	local rejects = {}
 	local got_reject = false
+	local home = vim.fn.expand("~/")
 
 	for fname, types in pairs(log_with_scriptnames) do
-		local sid = fname_to_sid(fname)
+		local sid = fname_to_sid(fname, home)
 		if sid then
 			if vim.o.verbose >= 1 then
 				print(("Cartographer: resolved fname %q to SID %d"):format(fname, sid))
