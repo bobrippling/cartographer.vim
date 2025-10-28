@@ -40,6 +40,7 @@ command! -bar -nargs=* -bang -complete=customlist,CartographerHookComplete Carto
 command! -bar -nargs=* -bang -complete=customlist,CartographerHookComplete CartographerUnhook lua require('cartographer').unhook({<f-args>}, <q-bang>)
 
 command! -bar CartographerDontSave aug CartographerExit | au! | aug END
+command! -bar -bang CartographerRejects lua require('cartographer').rejects(<q-bang>)
 
 augroup CartographerExit
 	autocmd!

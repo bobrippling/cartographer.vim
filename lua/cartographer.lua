@@ -58,6 +58,7 @@ local hooked = {} --[[
 
 local unhookable = {}
 local scripts_gone = {} -- { [fname] = <types> }
+local drop_scripts_gone = false
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
@@ -572,7 +573,7 @@ function M.install()
 
 	if got_reject then
 		save_table(scripts_gone, FNAME_LOG_NOTFOUND)
-		emit_err(("Cartographer: rejects saved to %q"):format(FNAME_LOG_NOTFOUND))
+		emit_err(("Cartographer: rejects/missing scripts saved to %q (:CartographerRejects)"):format(FNAME_LOG_NOTFOUND))
 	end
 end
 
@@ -591,6 +592,15 @@ function M.save_stats()
 		-- uses += uses_this_session
 		-- latest <-- max()
 		-- earliest <-- min()
+
+		if drop_scripts_gone then
+			for fname, _types in pairs(scripts_gone) do
+				existing[fname] = nil
+				if vim.o.verbose >= 1 then
+					print(("Dropping %q"):format(fname))
+				end
+			end
+		end
 
 		for fname_this, types_this in pairs(log_with_scriptnames) do
 			for ty_this, entries_this in pairs(types_this) do
@@ -875,6 +885,23 @@ end
 
 function M.unhookable()
 	return unhookable
+end
+
+function M.rejects(q_bang)
+	local bang = q_bang:len() > 0
+
+	if bang then
+		drop_scripts_gone = not drop_scripts_gone
+		if drop_scripts_gone then
+			print("Dropping missing scripts")
+		else
+			print("Not dropping missing scripts")
+		end
+	else
+		for fname, _rej in pairs(scripts_gone) do
+			print(fname)
+		end
+	end
 end
 
 return M
