@@ -526,7 +526,7 @@ end
 
 function emit_err(msg) -- can't handle single quotes
 	vim.cmd.echohl("Error")
-	vim.cmd.echo(("'%s'"):format(msg))
+	vim.cmd.echom(("'%s'"):format(msg))
 	vim.cmd.echohl("None")
 end
 
