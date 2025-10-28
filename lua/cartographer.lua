@@ -57,6 +57,7 @@ local hooked = {} --[[
 ]]
 
 local unhookable = {}
+local scripts_gone = {} -- { [fname] = <types> }
 
 local function hook_keymaps()
 	local keymap = vim.api.nvim_get_keymap('')
@@ -552,7 +553,6 @@ function M.install()
 	hook_all()
 
 	local log_with_scriptnames = load_table(FNAME_LOG) or {}
-	local rejects = {}
 	local got_reject = false
 	local home = vim.fn.expand("~/")
 
@@ -565,13 +565,13 @@ function M.install()
 			scriptlog[sid] = types
 		else
 			emit_err(("Cartographer: no loaded script (SID) found for filename %q"):format(fname))
-			rejects[fname] = types
+			scripts_gone[fname] = types
 			got_reject = true
 		end
 	end
 
 	if got_reject then
-		save_table(rejects, FNAME_LOG_NOTFOUND)
+		save_table(scripts_gone, FNAME_LOG_NOTFOUND)
 		emit_err(("Cartographer: rejects saved to %q"):format(FNAME_LOG_NOTFOUND))
 	end
 end
