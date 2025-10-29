@@ -272,6 +272,9 @@ function hook_cmd(cmd, err)
 
 	log_hooked(cmd.script_id, "command", cmd.name, cmd)
 
+	-- save the definition here so we don't pick up the changed one ('cartographer: ...`)
+	local cmddef = cmd.definition
+
 	vim.api.nvim_create_user_command(
 		cmd.name,
 		function(details)
@@ -287,7 +290,7 @@ function hook_cmd(cmd, err)
 			-- deal with q- and f-<...>
 			local generated_cmd =
 				replace_placeholders(
-					cmd.definition,
+					cmddef,
 					{
 						args = details.fargs, -- table
 						--args = details.args, -- string
