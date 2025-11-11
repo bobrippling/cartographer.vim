@@ -262,7 +262,14 @@ function hook_cmd(cmd, err)
 		-- TODO: get hold of the lua callback (not currently possible)
 		error({
 			what = "empty command def / lua callback",
-			msg = ("can't hook %s: command is empty or a lua callback"):format(cmd.name)
+			msg = ("can't hook %s: command is empty or a lua callback%s"):format(cmd.name, cmd.compl)
+		})
+	elseif cmd.complete == "<Lua function>"  then
+		-- a heuristic to detect commands which might have a lua callback, but have
+		-- set their description (which ends up in .definition)
+		error({
+			what = "probably a lua callback",
+			msg = ("can't hook %s: completion is lua, so definition probably is too"):format(cmd.name)
 		})
 	end
 
