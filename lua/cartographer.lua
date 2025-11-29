@@ -258,13 +258,17 @@ function hook_cmd(cmd, err)
 				)
 		})
 	end
-	if cmd.definition == "" then
-		-- TODO: get hold of the lua callback (not currently possible)
+
+	if cmd.callback then
+		-- as of neovim 612b2e78508757be5b7a3ef0e9bf1ed0f0b27cd2, this works
+
+	elseif cmd.definition == "" then
 		error({
 			what = "empty command def / lua callback",
 			msg = ("can't hook %s: command is empty or a lua callback%s"):format(cmd.name, cmd.compl)
 		})
-	elseif cmd.complete == "<Lua function>"  then
+
+	elseif type(cmd.complete) == "function" or cmd.complete == "<Lua function>"  then
 		-- a heuristic to detect commands which might have a lua callback, but have
 		-- set their description (which ends up in .definition)
 		error({
@@ -281,6 +285,7 @@ function hook_cmd(cmd, err)
 
 	-- save the definition here so we don't pick up the changed one ('cartographer: ...`)
 	local cmddef = cmd.definition
+	local callback = cmd.callback
 
 	vim.api.nvim_create_user_command(
 		cmd.name,
@@ -294,32 +299,36 @@ function hook_cmd(cmd, err)
 				details.fargs[#details.fargs] = details.fargs[#details.fargs] .. trailing_space
 			end
 
-			-- deal with q- and f-<...>
-			local generated_cmd =
-				replace_placeholders(
-					cmddef,
-					{
-						args = details.fargs, -- table
-						--args = details.args, -- string
-						bang = details.bang and "!" or "",
-						count = details.count ~= -1 and details.count or 0,
-						line1 = details.line1,
-						line2 = details.line2,
-						range = details.range,
-						reg = details.reg,
-						register = details.reg,
-						mods = details.mods, -- smods: {}, mods: string
-						lt = "<", -- <lt> -> literal
-					}
-				)
-				:gsub(
-					"%f[%a]s:",
-					function(key)
-						return ("<SNR>%d_"):format(cmd.script_id)
-					end
-				)
+			if callback then
+				return callback(details)
+			else
+				-- deal with q- and f-<...>
+				local generated_cmd =
+					replace_placeholders(
+						cmddef,
+						{
+							args = details.fargs, -- table
+							--args = details.args, -- string
+							bang = details.bang and "!" or "",
+							count = details.count ~= -1 and details.count or 0,
+							line1 = details.line1,
+							line2 = details.line2,
+							range = details.range,
+							reg = details.reg,
+							register = details.reg,
+							mods = details.mods, -- smods: {}, mods: string
+							lt = "<", -- <lt> -> literal
+						}
+					)
+					:gsub(
+						"%f[%a]s:",
+						function(key)
+							return ("<SNR>%d_"):format(cmd.script_id)
+						end
+					)
 
-			vim.cmd(generated_cmd)
+				vim.cmd(generated_cmd)
+			end
 		end,
 		{
 			force = true,

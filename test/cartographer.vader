@@ -291,3 +291,18 @@ Then (assert abbrev is used):
   Assert uses == 1
 Expect (changed text):
   HELLOtext
+
+Given (a lua callback command):
+  text
+Execute (set & hook the command):
+  lua vim.api.nvim_create_user_command('Abc', function() return 3 end, {})
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! command Abc
+  Abc
+Then (assert command is used):
+  let uses = luaeval('require("cartographer").uses("command", "Abc")')
+  Assert uses == 1
+  lua assert(vim.api.nvim_get_commands({}).Abc.callback({args = ""}) == 3)
+Expect (no changes):
+  text
