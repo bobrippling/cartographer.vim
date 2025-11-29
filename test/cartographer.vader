@@ -76,6 +76,7 @@ Execute (set & hook the mapping):
   lua require("cartographer").clear()
   CartographerDontSave
   CartographerHook! mapping il
+  "set virtualedit= " shouldn't be active (-u NONE)
 Do (trigger the map):
   jdil
 Then (assert map is used):
@@ -83,7 +84,6 @@ Then (assert map is used):
   Assert uses == 1
 Expect (changed text):
   text
-  
   text3
 
 Given (a <Plug> mapping):

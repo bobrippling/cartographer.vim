@@ -11,4 +11,8 @@ then vader_rtp='vader.vim'
 else vader_rtp='../vader.vim'
 fi
 
-nvim +"set rtp+=$vader_rtp" +"set rtp+=." -c 'Vader! test/*' >/dev/null
+# for running locally, may need:
+# :so plugin/cartographer.vim
+# :so ../vader.vim/plugin/vader.vim
+
+nvim -u NONE -i NONE +"set rtp+=$vader_rtp" +"set rtp+=." -c 'Vader! test/*' >/dev/null
