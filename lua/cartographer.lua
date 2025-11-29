@@ -329,6 +329,16 @@ function hook_cmd(cmd, err)
 					)
 
 				vim.cmd(generated_cmd)
+				local ok, e = pcall(vim.cmd, generated_cmd)
+				if e then
+					-- vim/_editor.lua:0: nvim_exec2(), line 1: Vim(echoerr): <what we want>
+					e = e:gsub("^.-:%d+: nvim_exec2%(%), *line %d+: Vim%(echoerr%): *", "")
+
+				  vim.cmd.echohl("Error")
+					vim.cmd.echo(('"%s (caught in cartographer)"'):format(vim.fn.escape(e, '"\\')))
+				  vim.cmd.echohl("NONE")
+					error(("%s (cartographer rethrow)"):format(e))
+				end
 			end
 		end,
 		{

@@ -306,3 +306,13 @@ Then (assert command is used):
   lua assert(vim.api.nvim_get_commands({}).Abc.callback({args = ""}) == 3)
 Expect (no changes):
   text
+
+Given (an error command):
+  text
+Execute (create the error command):
+  command! Raise echoerr 'bad'
+  lua require("cartographer").clear()
+  CartographerDontSave
+  CartographerHook! command Abc
+  " untested
+  AssertThrows execute('Abc')
