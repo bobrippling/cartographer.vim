@@ -33,3 +33,4 @@ For a more detailed summary, Cartographer uses Neovim's `:checkhealth` to displa
 - [x] Fix `:PlugInstall`'s breaking of hooks
 - [ ] A way to re-source files
 - [ ] Handle `<buffer>` commands and mappings
+- [ ] Handle mappings with lua callbacks?

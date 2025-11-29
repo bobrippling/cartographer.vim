@@ -160,6 +160,7 @@ function hook_keymap(mapping, err, ty)
 				if plug_mapping then
 					out = plug_mapping
 				elseif not nil_or_zero(mapping.expr) then
+					-- FIXME: what if the original was a lua func/callback? use `mapping.callback` ?
 					out = vim.fn.eval(mapping.rhs)
 				else
 					out = mapping.rhs
