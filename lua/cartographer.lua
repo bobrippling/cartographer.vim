@@ -300,35 +300,52 @@ function hook_cmd(cmd, err)
 				details.fargs[#details.fargs] = details.fargs[#details.fargs] .. trailing_space
 			end
 
-			if callback then
-				return callback(details)
-			else
-				-- deal with q- and f-<...>
-				local generated_cmd =
-					replace_placeholders(
-						cmddef,
-						{
-							args = details.fargs, -- table
-							--args = details.args, -- string
-							bang = details.bang and "!" or "",
-							count = details.count ~= -1 and details.count or 0,
-							line1 = details.line1,
-							line2 = details.line2,
-							range = details.range,
-							reg = details.reg,
-							register = details.reg,
-							mods = details.mods, -- smods: {}, mods: string
-							lt = "<", -- <lt> -> literal
-						}
-					)
-					:gsub(
-						"%f[%a]s:",
-						function(key)
-							return ("<SNR>%d_"):format(cmd.script_id)
-						end
-					)
+			local ok, e = pcall(function()
+				if callback then
+					return callback(details)
+				else
+					-- deal with q- and f-<...>
+					local generated_cmd =
+						replace_placeholders(
+							cmddef,
+							{
+								args = details.fargs, -- table
+								--args = details.args, -- string
+								bang = details.bang and "!" or "",
+								count = details.count ~= -1 and details.count or 0,
+								line1 = details.line1,
+								line2 = details.line2,
+								range = details.range,
+								reg = details.reg,
+								register = details.reg,
+								mods = details.mods, -- smods: {}, mods: string
+								lt = "<", -- <lt> -> literal
+							}
+						)
+						:gsub(
+							"%f[%a]s:",
+							function(key)
+								return ("<SNR>%d_"):format(cmd.script_id)
+							end
+						)
 
-				vim.cmd(generated_cmd)
+					vim.cmd(generated_cmd)
+				end
+			end)
+
+			if not ok then
+				e = e:gsub(".*nvim_exec2%(%), line %d+: *Vim[^:]*:", "")
+
+				-- error() will wrap our string with a backtrace, etc
+				-- to avoid this, we can provide an object with a tostring()
+				-- so that'll be used instead of the default error one
+				local e_unwrapper = setmetatable({}, {
+					__tostring = function()
+						return e
+					end,
+				})
+
+				error(e_unwrapper)
 			end
 		end,
 		{
