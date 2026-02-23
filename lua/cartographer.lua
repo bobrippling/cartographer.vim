@@ -610,7 +610,7 @@ function M.install()
 
 	if got_reject then
 		save_table(scripts_gone, FNAME_LOG_NOTFOUND)
-		emit_err(("Cartographer: rejects/missing scripts saved to %q (:CartographerRejects)"):format(FNAME_LOG_NOTFOUND))
+		emit_err(("Cartographer: rejects/missing scripts saved to %q (use `:CartographerRejects!` to drop)"):format(FNAME_LOG_NOTFOUND))
 	end
 end
 
