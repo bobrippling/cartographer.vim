@@ -593,6 +593,7 @@ function M.install()
 	local log_with_scriptnames = load_table(FNAME_LOG) or {}
 	local got_reject = false
 	local home = vim.fn.expand("~/")
+	local vimruntime = vim.env.VIMRUNTIME
 
 	for fname, types in pairs(log_with_scriptnames) do
 		local sid = fname_to_sid(fname, home)
@@ -602,9 +603,19 @@ function M.install()
 			end
 			scriptlog[sid] = types
 		else
-			emit_err(("Cartographer: no loaded script (SID) found for filename %q"):format(fname))
-			scripts_gone[fname] = types
-			got_reject = true
+			if fname:match("/after/") then
+				if vim.o.verbose >= 1 then
+					print(("Cartographer: ignoring `after/` script %q"):format(fname))
+				end
+			elseif fname:sub(1, #vimruntime) == vimruntime then
+				if vim.o.verbose >= 1 then
+					print(("Cartographer: ignoring unloaded $VIMRUNTIME script %q"):format(fname))
+				end
+			else
+				emit_err(("Cartographer: no loaded script (SID) found for filename %q"):format(fname))
+				scripts_gone[fname] = types
+				got_reject = true
+			end
 		end
 	end
 
