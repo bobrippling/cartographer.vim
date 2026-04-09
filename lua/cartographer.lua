@@ -587,6 +587,36 @@ function hook_all()
 	hook_keymaps()
 end
 
+function show_entries(tbl, has_sid)
+	for sid_or_fname, types in pairs(tbl) do
+		local latest, earliest
+		local uses = 0
+
+		for _ty, entries in pairs(types) do
+			for _entry, stat in pairs(entries) do
+				uses = uses + stat.uses
+				if latest == nil or stat.latest > latest then
+					latest = stat.latest
+				end
+				if earliest == nil or stat.earliest < earliest then
+					earliest = stat.earliest
+				end
+			end
+		end
+
+		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
+		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
+
+		print(("%s .. %s: %d use%s for %s"):format(
+			earliest_str,
+			latest_str,
+			uses,
+			uses == 1 and "" or "s",
+			has_sid and scriptname(sid_or_fname, true) or sid_or_fname
+		))
+	end
+end
+
 function M.install()
 	hook_all()
 
@@ -705,27 +735,7 @@ function M.save_stats()
 end
 
 function M.show_log(q_bang)
-	for sid, types in pairs(scriptlog) do
-		local latest, earliest
-		local uses = 0
-
-		for _ty, entries in pairs(types) do
-			for _entry, stat in pairs(entries) do
-				uses = uses + stat.uses
-				if latest == nil or stat.latest > latest then
-					latest = stat.latest
-				end
-				if earliest == nil or stat.earliest < earliest then
-					earliest = stat.earliest
-				end
-			end
-		end
-
-		local earliest_str = os.date("%Y-%m-%d %H:%M:%S", earliest)
-		local latest_str = os.date("%Y-%m-%d %H:%M:%S", latest)
-
-		print(("%s .. %s: %d use%s for %s"):format(earliest_str, latest_str, uses, uses == 1 and "" or "s", scriptname(sid, true)))
-	end
+	show_entries(scriptlog, true)
 
 	if q_bang:len() > 0 then
 		for sid, _types in pairs(hooked) do
