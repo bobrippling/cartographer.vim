@@ -266,7 +266,7 @@ function hook_cmd(cmd, err)
 	elseif cmd.definition == "" then
 		error({
 			what = "empty command def / lua callback",
-			msg = ("can't hook %s: command is empty or a lua callback%s"):format(cmd.name, cmd.compl)
+			msg = ("can't hook %s: command is empty or a lua callback%s"):format(cmd.name, cmd.compl and cmd.compl or "")
 		})
 
 	elseif type(cmd.complete) == "function" or cmd.complete == "<Lua function>"  then
