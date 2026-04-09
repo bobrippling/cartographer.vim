@@ -41,7 +41,32 @@ M.check = function()
 		vim.health.warn(ent)
 	end
 
-	for fname, types in pairs(script_summary) do
+	function entry_use_percent(entry)
+		local uses = 0
+		local total = 0
+
+		for _, ents in pairs(entry) do
+			for _, summary in pairs(ents) do
+				if summary.uses > 0 then
+					uses = uses + 1
+				end
+				total = total + 1
+			end
+		end
+
+		return total > 0 and uses / total or 0
+	end
+
+	local script_summary_keys = {}
+	for k, _ in pairs(script_summary) do
+		table.insert(script_summary_keys, k)
+	end
+	table.sort(script_summary_keys, function(a, b)
+		return entry_use_percent(script_summary[a]) < entry_use_percent(script_summary[b])
+	end)
+
+	for _, fname in pairs(script_summary_keys) do
+		local types = script_summary[fname]
 		local used = {}
 		local no_uses = {}
 		local old_uses = {}
