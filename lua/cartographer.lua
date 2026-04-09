@@ -956,9 +956,7 @@ function M.rejects(q_bang)
 			print("Not dropping missing scripts")
 		end
 	else
-		for fname, _rej in pairs(scripts_gone) do
-			print(fname)
-		end
+		show_entries(scripts_gone, false)
 	end
 end
 
