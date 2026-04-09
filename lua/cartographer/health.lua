@@ -28,6 +28,8 @@ M.check = function()
 	local script_summary = C.usage_summary()
 	local OLD = os.time() - 60 * 60 * 24 * 28
 
+	vim.health.start("General hooks")
+
 	local earliest, latest = stats(script_summary)
 	if earliest then
 		vim.health.info(("Oldest event %s, newest event %s"):format(earliest, latest))
