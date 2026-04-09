@@ -45,6 +45,8 @@ M.check = function()
 		local used = {}
 		local no_uses = {}
 		local old_uses = {}
+		local uses_script = 0
+		local total_script = 0
 
 		vim.health.start(("Script %s:"):format(fname))
 
@@ -80,6 +82,8 @@ M.check = function()
 				end
 				total = total + 1
 			end
+			uses_script = uses_script + uses
+			total_script = total_script + total
 
 			local fn
 			if uses == 0 then
@@ -90,14 +94,17 @@ M.check = function()
 			fn(("%.0f%% of %ss used (%d / %d)"):format(uses / total * 100, ty, uses, total))
 		end
 
-		for _, ent in pairs(no_uses) do
-			vim.health.warn(ent)
-		end
-		for _, ent in pairs(old_uses) do
-			vim.health.warn(ent)
-		end
-		for _, ent in pairs(used) do
-			vim.health.info(ent)
+		-- only bother logging if there are some uses and not entire uses
+		if uses_script > 0 and uses_script < total_script then
+			for _, ent in pairs(no_uses) do
+				vim.health.warn(ent)
+			end
+			for _, ent in pairs(old_uses) do
+				vim.health.warn(ent)
+			end
+			for _, ent in pairs(used) do
+				vim.health.info(ent)
+			end
 		end
 	end
 end
