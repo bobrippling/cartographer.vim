@@ -312,7 +312,7 @@ function hook_cmd(cmd, err)
 								args = details.fargs, -- table
 								--args = details.args, -- string
 								bang = details.bang and "!" or "",
-								count = details.count ~= -1 and details.count or 0,
+								count = details.count, -- allow -1
 								line1 = details.line1,
 								line2 = details.line2,
 								range = details.range,
