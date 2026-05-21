@@ -617,6 +617,14 @@ function show_entries(tbl, has_sid)
 	end
 end
 
+function is_runtime_script(fname, vimruntime)
+	if vimruntime == nil then
+		vimruntime = vim.env.VIMRUNTIME
+	end
+
+	return fname:sub(1, #vimruntime) == vimruntime
+end
+
 function M.install()
 	hook_all()
 
@@ -637,7 +645,7 @@ function M.install()
 				if vim.o.verbose >= 1 then
 					print(("Cartographer: ignoring `after/` script %q"):format(fname))
 				end
-			elseif fname:sub(1, #vimruntime) == vimruntime then
+			elseif is_runtime_script(fname, vimruntime) then
 				if vim.o.verbose >= 1 then
 					print(("Cartographer: ignoring unloaded $VIMRUNTIME script %q"):format(fname))
 				end
@@ -660,7 +668,7 @@ function M.save_stats()
 
 	for sid, types in pairs(scriptlog) do
 		local fname = scriptname(sid, false)
-		if fname then
+		if fname and not is_runtime_script(fname) then
 			log_with_scriptnames[fname] = types
 		end
 	end
