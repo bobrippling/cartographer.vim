@@ -558,7 +558,12 @@ function load_table(filename)
 	end
 	local content = file:read("*a")
 	file:close()
-	return vim.json.decode(content)
+	local ok, x = pcall(vim.json.decode, content)
+	if not ok then
+		emit_err(("Cartographer: error parsing %q: %s"):format(filename, x))
+		return nil
+	end
+	return x
 end
 
 function fname_to_sid(fname, home)
